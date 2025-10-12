@@ -10,3 +10,7 @@ php artisan make:migration create_ratings_reviews_table
 php artisan make:migration create_user_favorites_table
 php artisan make:migration create_movie_languages_table
 php artisan make:migration create_movie_countries_table
+
+
+php artisan make:seeder GenreSeeder
+   - php artisan db:seed --class=GenreSeeder
