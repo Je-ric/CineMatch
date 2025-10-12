@@ -14,3 +14,14 @@ php artisan make:migration create_movie_countries_table
 
 php artisan make:seeder GenreSeeder
    - php artisan db:seed --class=GenreSeeder
+
+
+php artisan make:migration update_users_table_add_role_and_username_columns --table=users
+
+
+
+refresh, then do this or clear the database in phpMyAdmin
+    php artisan config:clear
+    php artisan route:clear
+    php artisan view:clear
+    php artisan migrate
