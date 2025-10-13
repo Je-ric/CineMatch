@@ -29,6 +29,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'username',
+        'role',
     ];
 
     /**
@@ -63,5 +65,27 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function favorites()
+    {
+        return $this->belongsToMany(Movie::class, 'user_favorites');
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(RatingReview::class);
     }
 }

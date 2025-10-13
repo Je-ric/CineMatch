@@ -2,18 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class UserFavorite extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'favoriteable_id',
-        'favoriteable_type',
-    ];
+    use HasFactory;
 
-    public function favoriteable()
+    protected $table = 'user_favorites';
+
+    protected $fillable = ['user_id', 'movie_id'];
+
+    public function user()
     {
-        return $this->morphTo();
+        return $this->belongsTo(User::class);
+    }
+
+    public function movie()
+    {
+        return $this->belongsTo(Movie::class);
     }
 }
