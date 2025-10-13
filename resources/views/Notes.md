@@ -25,3 +25,17 @@ refresh, then do this or clear the database in phpMyAdmin
     php artisan route:clear
     php artisan view:clear
     php artisan migrate
+
+php artisan make:model Movie
+php artisan make:model Genre
+php artisan make:model Language
+php artisan make:model Country
+php artisan make:model MoviePerson
+php artisan make:model RatingReview
+php artisan make:model UserFavorite
+
+Note: The other tables are just pivot
+    - Movie Genres 
+    - Movie Language
+    - Movie Country
+    - Movie Cast
