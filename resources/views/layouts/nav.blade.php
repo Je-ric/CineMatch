@@ -8,13 +8,13 @@
 @endphp
 
 <header class="bg-primary-bg/90 backdrop-blur-md border-b border-accent/50 px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-50">
-    
+
     <a href="{{ route('home') }}" class="text-xl md:text-2xl font-bold text-accent flex items-center font-oswald">
         <i class="bx bx-movie-play mr-2"></i>CineMatch
     </a>
 
     <div class="flex items-center gap-3 text-sm">
-        
+
         @if($showBackToMovies)
             <a href="{{ route('home') }}" class="btn btn-outline btn-accent flex items-center gap-1 text-sm">
                 <i class="bx bx-arrow-back"></i>
@@ -35,7 +35,7 @@
             @endif
 
             @if($currentRoute !== 'profile')
-                <a href="{{ route('profile') }}" 
+                <a href="{{ route('profile') }}"
                    class="btn btn-circle btn-accent text-white tooltip flex items-center justify-center"
                    data-tip="My Profile">
                     <i class="bx bx-user text-xl"></i>
