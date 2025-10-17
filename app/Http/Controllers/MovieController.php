@@ -327,21 +327,30 @@ class MovieController extends Controller
         $countryName = trim($countryName);
         if ($countryName === '') return null;
 
-        $jsonPath = base_path('Movie/JSON/countries.json');
-        if (!is_file($jsonPath)) {
-            $jsonPath = base_path('Movie/JSON/country.json');
-        }
+        // Look in public/JSON (matches manageMovie fetch('JSON/countries.json'))
+        $jsonPathCandidates = [
+            public_path('JSON/countries.json'),
+            public_path('JSON/country.json'),
+            base_path('JSON/countries.json'), // keep legacy fallback if present
+            base_path('JSON/country.json'),
+        ];
+
         $allowed = [];
-        if (is_file($jsonPath)) {
-            $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
-            foreach ($arr as $row) {
-                $allowed[] = $row['country'] ?? $row['name'] ?? null;
+        foreach ($jsonPathCandidates as $jsonPath) {
+            if (is_file($jsonPath)) {
+                $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
+                foreach ($arr as $row) {
+                    $allowed[] = $row['country'] ?? $row['name'] ?? null;
+                }
+                break;
             }
-            $allowed = array_filter(array_map('strval', $allowed));
         }
+
+        $allowed = array_filter(array_map('strval', $allowed));
         if (!empty($allowed) && !in_array($countryName, $allowed, true)) {
             return null;
         }
+
         $model = Country::firstOrCreate(['name' => $countryName]);
         return $model->id;
     }
@@ -351,19 +360,58 @@ class MovieController extends Controller
         $languageName = trim($languageName);
         if ($languageName === '') return null;
 
-        $jsonPath = base_path('Movie/JSON/language.json');
+        // Look in public/JSON (matches manageMovie fetch('JSON/language.json'))
+        $jsonPathCandidates = [
+            public_path('JSON/language.json'),
+            public_path('JSON/languages.json'),
+            base_path('JSON/language.json'),
+            base_path('JSON/languages.json'),
+        ];
+
         $allowed = [];
-        if (is_file($jsonPath)) {
-            $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
-            foreach ($arr as $row) {
-                $allowed[] = $row['name'] ?? null;
+        foreach ($jsonPathCandidates as $jsonPath) {
+            if (is_file($jsonPath)) {
+                $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
+                foreach ($arr as $row) {
+                    $allowed[] = $row['name'] ?? $row['language'] ?? null;
+                }
+                break;
             }
-            $allowed = array_filter(array_map('strval', $allowed));
         }
+
+        $allowed = array_filter(array_map('strval', $allowed));
         if (!empty($allowed) && !in_array($languageName, $allowed, true)) {
             return null;
         }
+
         $model = Language::firstOrCreate(['name' => $languageName]);
         return $model->id;
+    }
+
+    /**
+     * Show create form for a movie (was previously in routes closure).
+     */
+    public function create()
+    {
+        $allGenres = Genre::orderBy('name')->get();
+        return view('manageMovie', [
+            'editing' => false,
+            'movie' => null,
+            'allGenres' => $allGenres,
+        ]);
+    }
+
+    /**
+     * Show edit form for a movie (was previously in routes closure).
+     */
+    public function edit($id)
+    {
+        $movie = Movie::with(['genres', 'countries', 'languages'])->findOrFail($id);
+        $allGenres = Genre::orderBy('name')->get();
+        return view('manageMovie', [
+            'editing' => true,
+            'movie' => $movie,
+            'allGenres' => $allGenres,
+        ]);
     }
 }

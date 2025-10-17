@@ -38,13 +38,14 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (auth()->attempt($credentials)) {
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('home');
+            // redirect to named home route (root). Avoid redirecting to a literal '/home' path.
+            return redirect()->intended(route('home'));
         }
 
         return back()->withErrors([
-            'username' => 'Invalid credentials.',
+            'username' => 'The provided credentials do not match our records.',
         ]);
     }
 

@@ -13,8 +13,9 @@ php artisan make:migration create_movie_countries_table
 
 
 php artisan make:seeder GenreSeeder
-   - php artisan db:seed --class=GenreSeeder
-
+    - php artisan db:seed --class=GenreSeeder
+php artisan make:seeder AdminUserSeeder
+    - php artisan db:seed --class=AdminUserSeeder
 
 php artisan make:migration update_users_table_add_role_and_username_columns --table=users
 

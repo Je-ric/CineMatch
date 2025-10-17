@@ -40,31 +40,17 @@ Route::post('/login', [AuthController::class, 'login'])
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
-Route::get('/login', [AuthController::class, 'login'])
-    ->name('login');
+Route::get('/login', function () {
+    return redirect()->route('auth');
+})->name('login');
 
 
 Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.show');
 
 // Manage Movie (Blade)
-Route::get('/movies/manage', function () {
-    $allGenres = Genre::orderBy('name')->get();
-    return view('manageMovie', [
-        'editing' => false,
-        'movie' => null,
-        'allGenres' => $allGenres,
-    ]);
-})->name('movies.manage.create');
+Route::get('/movies/manage', [MovieController::class, 'create'])->name('movies.manage.create');
 
-Route::get('/movies/manage/{id}', function ($id) {
-    $movie = Movie::with(['genres', 'countries', 'languages'])->findOrFail($id);
-    $allGenres = Genre::orderBy('name')->get();
-    return view('manageMovie', [
-        'editing' => true,
-        'movie' => $movie,
-        'allGenres' => $allGenres,
-    ]);
-})->name('movies.manage.edit');
+Route::get('/movies/manage/{id}', [MovieController::class, 'edit'])->name('movies.manage.edit');
 
 // Movies CRUD
 Route::post('/movies', [MovieController::class, 'store'])->name('movies.store');

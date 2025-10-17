@@ -27,13 +27,13 @@
                     <input type="hidden" name="action" value="login">
 
                     <input type="text" name="username" placeholder="Username" required
-                        class="w-full px-4 py-2 bg-secondary-bg/60 border border-border-color rounded-lg
-                                focus:ring-2 focus:ring-accent focus:outline-none
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
+                                focus:ring-2 focus:ring-accent focus:outline-none bg-transparent
                                 text-text-primary placeholder-text-muted">
 
                     <input type="password" name="password" placeholder="Password" required
-                        class="w-full px-4 py-2 bg-secondary-bg/60 border border-border-color rounded-lg
-                                focus:ring-2 focus:ring-accent focus:outline-none
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
+                                focus:ring-2 focus:ring-accent focus:outline-none bg-transparent
                                 text-text-primary placeholder-text-muted">
 
                     <div class="px-9 my-6 flex items-center">
@@ -47,7 +47,7 @@
                         {{-- google login option --}}
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'google'])  }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/google-logo.png') }}" alt="google-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Google</span> --}}
                             </a>
@@ -56,7 +56,7 @@
                         {{-- facebook login option --}}
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'facebook']) }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/facebook-logo.png') }}" alt="facebook-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Facebook</span> --}}
                             </a>
@@ -64,7 +64,7 @@
 
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'github']) }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/github-logo.png') }}" alt="github-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Facebook</span> --}}
                             </a>
@@ -99,13 +99,27 @@
                     @csrf
                     <input type="hidden" name="action" value="register">
 
-                    <input type="text" name="username" placeholder="Username" required
-                        class="w-full px-4 py-2 bg-secondary-bg/60 border border-border-color rounded-lg
+                    <!-- Added name and email (required by users table / controller) -->
+                    <input type="text" name="name" placeholder="Full name" required
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
                                 focus:ring-2 focus:ring-accent focus:outline-none
-                                text-text-primary placeholder-text-muted">
+                                text-text-primary placeholder-text-muted"
+                        value="{{ old('name') }}">
+
+                    <input type="email" name="email" placeholder="Email address" required
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
+                                focus:ring-2 focus:ring-accent focus:outline-none
+                                text-text-primary placeholder-text-muted"
+                        value="{{ old('email') }}">
+
+                    <input type="text" name="username" placeholder="Username" required
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
+                                focus:ring-2 focus:ring-accent focus:outline-none
+                                text-text-primary placeholder-text-muted"
+                        value="{{ old('username') }}">
 
                     <input type="password" name="password" placeholder="Password" required
-                        class="w-full px-4 py-2 bg-secondary-bg/60 border border-border-color rounded-lg
+                        class="w-full px-4 py-2 border border-border-color rounded-lg
                                 focus:ring-2 focus:ring-accent focus:outline-none
                                 text-text-primary placeholder-text-muted">
 
@@ -120,7 +134,7 @@
                         {{-- google login option --}}
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'google'])  }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/google-logo.png') }}" alt="google-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Google</span> --}}
                             </a>
@@ -129,7 +143,7 @@
                         {{-- facebook login option --}}
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'facebook']) }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/facebook-logo.png') }}" alt="facebook-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Facebook</span> --}}
                             </a>
@@ -137,7 +151,7 @@
 
                         <div class="flex justify-center items-center px-5">
                             <a href="{{ route('auth.redirect', ['provider' => 'github']) }}"
-                                class="w-full bg-white hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
+                                class="w-full font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center">
                                 <img src="{{ asset('img/auth/github-logo.png') }}" alt="github-logo" class="w-6 h-6">
                                 {{-- <span>Continue with Facebook</span> --}}
                             </a>

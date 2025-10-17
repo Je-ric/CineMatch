@@ -23,7 +23,7 @@
 
             {{-- ADMIN ONLY: Add Movie --}}
             @if (Auth::user()->role === 'admin')
-                <a href="" class="btn btn-accent flex items-center gap-1 text-sm">
+                <a href="{{ route('movies.manage.create') }}" class="btn btn-accent flex items-center gap-1 text-sm">
                     <i class="bx bx-plus"></i>
                     <span class="hidden sm:inline">Add Movie</span>
                 </a>
