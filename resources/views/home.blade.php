@@ -1,4 +1,7 @@
-<x-layout>
+@extends('layouts.app')
+
+@section('page-content')
+
     <div class="px-6 md:px-10 py-10">
         <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -212,8 +215,8 @@
         })(jQuery);
         </script>
         @endpush
-</x-layout>
 
+@endsection
 
 {{-- hindi pa ayos yung sa admin side HAHAAHAHAAAA --}}
 

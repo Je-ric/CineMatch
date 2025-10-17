@@ -1,4 +1,7 @@
-<x-layout>
+@extends('layouts.app')
+
+@section('page-content')
+
     @push('styles')
         <style>
             .star-rating {
@@ -222,4 +225,5 @@
             @endforeach
         </div>
     </section>
-</x-layout>
+
+@endsection

@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JMR CineRecoSys — Login & Register</title>
-    @include('partials.links')
-</head>
-
-@include('partials.includes.header')
+@section('page-content')
 
 <body class="min-h-screen font-oswald bg-no-repeat bg-cover bg-center"
     style="background-image: url('{{ asset('img/loginRegister-bg.avif') }}');"  >
@@ -177,4 +169,5 @@
 </script>
 </body>
 
-</html>
+
+@endsection
