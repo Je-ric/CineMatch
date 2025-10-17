@@ -81,11 +81,20 @@ class User extends Authenticatable
 
     public function favorites()
     {
-        return $this->belongsToMany(Movie::class, 'user_favorites');
+        return $this->belongsToMany(
+            Movie::class,
+            'user_favorites',
+            'user_id',
+            'movie_id'
+        );
     }
 
     public function ratings()
     {
-        return $this->hasMany(RatingReview::class);
+        return $this->hasMany(
+            RatingReview::class,
+            'user_id',
+            'id'
+        );
     }
 }

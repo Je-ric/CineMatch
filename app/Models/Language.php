@@ -13,6 +13,11 @@ class Language extends Model
 
     public function movies()
     {
-        return $this->belongsToMany(Movie::class, 'movie_languages');
+        return $this->belongsToMany(
+            Movie::class,
+            'movie_languages',
+            'language_id',
+            'movie_id'
+        );
     }
 }

@@ -36,6 +36,32 @@ class MovieController extends Controller
             )
             ->get();
 
+        // If no data, provide placeholder movies so the UI has something to show
+        if ($movies->isEmpty()) {
+            $movies = collect([
+                (object)[
+                    'id' => 0,
+                    'title' => 'Sample Movie — Add real data',
+                    'release_year' => date('Y'),
+                    'poster_url' => asset('images/placeholders/sample1.jpg'),
+                    'description' => 'No movie data available yet. This is placeholder content.',
+                    'country_name' => 'Unknown',
+                    'language_name' => 'Unknown',
+                    'avg_rating' => null,
+                ],
+                (object)[
+                    'id' => 1,
+                    'title' => 'Another Sample Movie',
+                    'release_year' => date('Y'),
+                    'poster_url' => asset('images/placeholders/sample2.jpg'),
+                    'description' => 'Placeholder entry. Replace with real movies from the database.',
+                    'country_name' => 'Unknown',
+                    'language_name' => 'Unknown',
+                    'avg_rating' => null,
+                ],
+            ]);
+        }
+
         // ✅ Trending = Top 12 highest-rated movies (with non-null ratings)
         $trending = $movies
             ->whereNotNull('avg_rating')
@@ -137,6 +163,15 @@ class MovieController extends Controller
                 return $reviewObj;
             });
 
+            // Provide a friendly placeholder if there are no reviews
+            if ($reviews->isEmpty()) {
+                $placeholder = new \stdClass();
+                $placeholder->username = 'No reviews yet';
+                $placeholder->rating = null;
+                $placeholder->review = 'Be the first to review this movie.';
+                $reviews = collect([$placeholder]);
+            }
+
             // Get related movies with average ratings
             $relatedMovies = DB::connection('mysql_movies')
                 ->table('movies')
@@ -160,11 +195,38 @@ class MovieController extends Controller
                 ->limit(6)
                 ->get();
 
+            // If no related movies found, add a placeholder entry
+            if ($relatedMovies->isEmpty()) {
+                $relatedMovies = collect([
+                    (object)[
+                        'id' => 0,
+                        'title' => 'No related movies found',
+                        'poster_url' => asset('images/placeholders/no_related.jpg'),
+                        'release_year' => null,
+                        'avg_rating' => null,
+                        'review_count' => 0,
+                    ]
+                ]);
+            }
+
             // Fix related movies poster URLs
             foreach ($relatedMovies as $related) {
-                if ($related->poster_url && !str_starts_with($related->poster_url, 'http')) {
+                if (!empty($related->poster_url) && !str_starts_with($related->poster_url, 'http')) {
                     $related->poster_url = asset($related->poster_url);
                 }
+            }
+
+            // Ensure genres, directors and actors always have at least a placeholder
+            if (empty($genres)) {
+                $genres = ['Unknown'];
+            }
+
+            if ($directors->isEmpty()) {
+                $directors = collect([(object)['name' => 'Unknown']]);
+            }
+
+            if ($actors->isEmpty()) {
+                $actors = collect([(object)['name' => 'Unknown']]);
             }
 
             return view('viewMovie', compact('movie', 'genres', 'directors', 'actors', 'reviews', 'relatedMovies'));

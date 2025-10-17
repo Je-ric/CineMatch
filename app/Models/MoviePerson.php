@@ -13,8 +13,13 @@ class MoviePerson extends Model
 
     public function movies()
     {
-        return $this->belongsToMany(Movie::class, 'movie_cast')
-            ->withPivot('role')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            Movie::class,
+            'movie_cast',
+            'person_id',
+            'movie_id'
+        )
+        ->withPivot('role')
+        ->withTimestamps();
     }
 }
