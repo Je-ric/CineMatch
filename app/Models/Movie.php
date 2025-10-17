@@ -76,7 +76,7 @@ class Movie extends Model
         );
     }
 
-    // --- Accessors for URLs and youtube id ---
+    // --- Accessors ---
     public function getPosterUrlAttribute($value)
     {
         if (empty($value)) {

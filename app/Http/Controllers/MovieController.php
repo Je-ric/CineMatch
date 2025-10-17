@@ -129,6 +129,29 @@ class MovieController extends Controller
                 'languages' => collect([]),
                 'cast' => collect([]),
             ];
+
+            $genres = [];
+            $directors = collect([]);
+            $actors = collect([]);
+        } else {
+            // ensure country / language convenient attributes for the view
+            $movie->country_name = $movie->countries->first()?->name ?? null;
+            $movie->language_name = $movie->languages->first()?->name ?? null;
+
+            // Genres as simple array of names (view expects $genres)
+            $genres = $movie->genres->pluck('name')->toArray();
+
+            // Split cast by pivot.role (case-insensitive)
+            $directors = $movie->cast->filter(function ($person) {
+                $role = $person->pivot->role ?? '';
+                return strcasecmp(trim((string)$role), 'director') === 0;
+            })->values();
+
+            $actors = $movie->cast->filter(function ($person) {
+                $role = $person->pivot->role ?? '';
+                return strcasecmp(trim((string)$role), 'cast') === 0
+                    || strcasecmp(trim((string)$role), 'actor') === 0;
+            })->values();
         }
 
         // Reviews - if none, add a placeholder review
@@ -173,6 +196,9 @@ class MovieController extends Controller
             'movie' => $movie,
             'reviews' => $reviews,
             'relatedMovies' => $related,
+            'genres' => $genres,
+            'directors' => $directors,
+            'actors' => $actors,
         ]);
     }
 
