@@ -220,7 +220,7 @@ class MovieController extends Controller
             $movie->languages()->sync([$languageId]);
         }
 
-        return response()->json(['success' => true, 'id' => $movie->id]);
+        return redirect()->route('home')->with('success', 'Movie added successfully');
     }
 
     // Update a movie, optionally replacing images and syncing relations
@@ -272,7 +272,7 @@ class MovieController extends Controller
             $movie->languages()->sync([$languageId]);
         }
 
-        return response()->json(['success' => true]);
+        return redirect()->route('home')->with('success', 'Movie updated successfully');
     }
 
     // Delete a movie and clean up files and pivots

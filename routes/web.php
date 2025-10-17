@@ -49,7 +49,6 @@ Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.sho
 
 // Manage Movie (Blade)
 Route::get('/movies/manage', [MovieController::class, 'create'])->name('movies.manage.create');
-
 Route::get('/movies/manage/{id}', [MovieController::class, 'edit'])->name('movies.manage.edit');
 
 // Movies CRUD
