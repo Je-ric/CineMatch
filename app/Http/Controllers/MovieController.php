@@ -220,7 +220,9 @@ class MovieController extends Controller
             $movie->languages()->sync([$languageId]);
         }
 
-        return redirect()->route('home')->with('success', 'Movie added successfully');
+        // instead of redirecting to home, send user to the edit/manage page for the newly created movie
+        return redirect()->route('movies.manage.edit', ['id' => $movie->id])
+                         ->with('success', 'Movie created. You can now add people and media.');
     }
 
     // Update a movie, optionally replacing images and syncing relations
@@ -272,7 +274,9 @@ class MovieController extends Controller
             $movie->languages()->sync([$languageId]);
         }
 
-        return redirect()->route('home')->with('success', 'Movie updated successfully');
+        // keep user on the manage/edit page so they can add persons immediately
+        return redirect()->route('movies.manage.edit', ['id' => $id])
+                         ->with('success', 'Movie updated.');
     }
 
     // Delete a movie and clean up files and pivots

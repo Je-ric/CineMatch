@@ -1,63 +1,77 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ $editing ? 'Update Movie' : 'Add Movie' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
-    <style>
-        .accordion-icon {
-            transition: transform .3s ease
-        }
+@section('page-content')
+  <style>
+    body {
+      font-family: 'Oswald', sans-serif;
+    }
 
-        .accordion-section[open] .accordion-icon {
-            transform: rotate(90deg)
-        }
+    .accordion-icon {
+      transition: transform 0.3s ease;
+    }
 
-        .person-badge {
-            background: linear-gradient(135deg, #0891b2 0%, #10b981 100%);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 20px;
-            margin: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 500
-        }
+    .accordion-section[open] .accordion-icon {
+      transform: rotate(90deg);
+    }
 
-        .remove-person {
-            background: rgba(255, 255, 255, .2);
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center
-        }
+    /* jQuery UI autocomplete styling */
+    .ui-autocomplete {
+      background: #334155 !important;
+      border: 2px solid #475569 !important;
+      border-radius: 8px !important;
+      color: #f8fafc !important;
+      max-height: 200px;
+      overflow-y: auto;
+    }
 
-        .empty-state {
-            color: #64748b;
-            font-style: italic;
-            text-align: center;
-            padding: 20px;
-            background: #475569;
-            border-radius: 8px;
-            border: 2px dashed #64748b
-        }
-    </style>
-</head>
+    .ui-autocomplete .ui-menu-item {
+      padding: 8px 12px !important;
+      border-bottom: 1px solid #475569 !important;
+    }
 
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
+    .ui-autocomplete .ui-menu-item:hover,
+    .ui-autocomplete .ui-menu-item.ui-state-focus {
+      background: #0891b2 !important;
+      color: white !important;
+    }
+
+    .person-badge {
+      background: linear-gradient(135deg, #0891b2 0%, #10b981 100%);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 20px;
+      margin: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .remove-person {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state {
+      color: #64748b;
+      font-style: italic;
+      text-align: center;
+      padding: 20px;
+      background: #475569;
+      border-radius: 8px;
+      border: 2px dashed #64748b;
+    }
+  </style>
     <main class="max-w-6xl mx-auto py-8 px-4 md:px-8">
         <div class="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl overflow-hidden">
             <form action="{{ $editing ? route('movies.update', $movie->id) : route('movies.store') }}" method="POST"
@@ -94,8 +108,8 @@
                                     Release Year
                                 </label>
                                 <input type="number" name="release_year"
-                                    value="{{ old('release_year', $editing ? $movie->release_year : '') }}"
-                                    min="1960" max="{{ date('Y') }}"
+                                    value="{{ old('release_year', $editing ? $movie->release_year : '') }}" min="1960"
+                                    max="{{ date('Y') }}"
                                     class="w-full px-4 py-3 bg-slate-700 border-2 border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-cyan-500 focus:ring-0 focus:outline-none transition-all duration-300"
                                     placeholder="{{ date('Y') }}" />
                             </div>
@@ -145,8 +159,7 @@
                                     class="w-full px-4 py-3 bg-slate-700 border-2 border-slate-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500 file:text-white hover:file:bg-cyan-600 focus:border-cyan-500 focus:ring-0 focus:outline-none transition-all duration-300" />
                                 @if ($editing && !empty($movie->getRawOriginal('poster_url')))
                                     <div class="mt-4">
-                                        <img src="{{ asset($movie->getRawOriginal('poster_url')) }}"
-                                            alt="Current Poster"
+                                        <img src="{{ asset($movie->getRawOriginal('poster_url')) }}" alt="Current Poster"
                                             class="max-h-48 object-cover rounded-xl border-2 border-slate-600 shadow-lg" />
                                     </div>
                                 @endif
@@ -326,9 +339,17 @@
         // Load people from server
         function loadPeople(role) {
             if (!movieId) return;
-            $.post("{{ route('people.fetch') }}", { _token: "{{ csrf_token() }}", movie_id: movieId, role: role })
-                .done(function(res){ renderPeople(role, res.data || []); })
-                .fail(function(xhr){ console.error('Failed to load people', xhr.responseText); });
+            $.post("{{ route('people.fetch') }}", {
+                    _token: "{{ csrf_token() }}",
+                    movie_id: movieId,
+                    role: role
+                })
+                .done(function(res) {
+                    renderPeople(role, res.data || []);
+                })
+                .fail(function(xhr) {
+                    console.error('Failed to load people', xhr.responseText);
+                });
         }
 
         function renderPeople(role, people) {
@@ -368,9 +389,20 @@
                 return;
             }
 
-            $.post("{{ route('people.add') }}", { _token: "{{ csrf_token() }}", movie_id: movieId, name: trimmed, role: role })
-                .done(function(){ const inputId = role === 'Director' ? '#director-input' : '#actor-input'; $(inputId).val(''); loadPeople(role); })
-                .fail(function(){ alert("Error adding " + role.toLowerCase() + "!"); });
+            $.post("{{ route('people.add') }}", {
+                    _token: "{{ csrf_token() }}",
+                    movie_id: movieId,
+                    name: trimmed,
+                    role: role
+                })
+                .done(function() {
+                    const inputId = role === 'Director' ? '#director-input' : '#actor-input';
+                    $(inputId).val('');
+                    loadPeople(role);
+                })
+                .fail(function() {
+                    alert("Error adding " + role.toLowerCase() + "!");
+                });
         }
 
         $(document).on('click', '.remove-person', function() {
@@ -386,9 +418,18 @@
 
             if (confirm(`Are you sure you want to remove this ${role.toLowerCase()}?\nName: ${personName}`)) {
                 if (!movieId) return;
-                $.post("{{ route('people.remove') }}", { _token: "{{ csrf_token() }}", movie_id: movieId, person_id: id, role: role })
-                    .done(function(){ loadPeople(role); })
-                    .fail(function(){ alert("Error removing " + role.toLowerCase() + "!"); });
+                $.post("{{ route('people.remove') }}", {
+                        _token: "{{ csrf_token() }}",
+                        movie_id: movieId,
+                        person_id: id,
+                        role: role
+                    })
+                    .done(function() {
+                        loadPeople(role);
+                    })
+                    .fail(function() {
+                        alert("Error removing " + role.toLowerCase() + "!");
+                    });
             } else {
                 console.log('[People] Remove -> cancelled');
             }
@@ -409,15 +450,21 @@
             $('#director-input, #actor-input').autocomplete({
                 source: function(request, response) {
                     console.log('[Autocomplete] query:', request.term);
-                    $.post("{{ route('people.search') }}", { _token: "{{ csrf_token() }}", query: request.term })
-                        .done(function(res){ const people = Array.isArray(res) ? res : (res.data || []); response(people.map(p => p.name)); })
-                        .fail(function(){ response([]); });
+                    $.post("{{ route('people.search') }}", {
+                            _token: "{{ csrf_token() }}",
+                            query: request.term
+                        })
+                        .done(function(res) {
+                            const people = Array.isArray(res) ? res : (res.data || []);
+                            response(people.map(p => p.name));
+                        })
+                        .fail(function() {
+                            response([]);
+                        });
                 },
                 minLength: 2, // ---
                 delay: 300
             });
         }
     </script>
-</body>
-
-</html>
+@endsection

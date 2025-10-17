@@ -42,7 +42,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 Route::get('/login', function () {
     return redirect()->route('auth');
-})->name('login');
+})->name('login.redirect');
 
 
 Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.show');
@@ -58,9 +58,9 @@ Route::delete('/movies/{id}', [MovieController::class, 'destroy'])->name('movies
 
 // People endpoints (AJAX)
 Route::post('/people/fetch', [PeopleController::class, 'fetch'])->name('people.fetch');
-Route::post('/people/add', [PeopleController::class, 'add'])->name('people.add');
-Route::post('/people/remove', [PeopleController::class, 'remove'])->name('people.remove');
-Route::post('/people/search', [PeopleController::class, 'search'])->name('people.search');
+Route::post('/people/add',   [PeopleController::class, 'add'])->name('people.add');
+Route::post('/people/remove',[PeopleController::class, 'remove'])->name('people.remove');
+Route::post('/people/search',[PeopleController::class, 'search'])->name('people.search');
 
 Route::get('/profile', function () {
     return view('pages.profile');

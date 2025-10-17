@@ -17,7 +17,16 @@ class PeopleController extends Controller
         ]);
 
         $movie = Movie::findOrFail($validated['movie_id']);
-        $people = $movie->cast()->wherePivot('role', $validated['role'])->orderBy('name')->get(['movie_people.id', 'movie_people.name']);
+
+        // Do a case-insensitive match on the pivot.role to be robust
+        $roleLower = strtolower($validated['role']);
+
+        $people = MoviePerson::join('movie_cast', 'movie_people.id', '=', 'movie_cast.person_id')
+            ->where('movie_cast.movie_id', $movie->id)
+            ->whereRaw('LOWER(movie_cast.role) = ?', [$roleLower])
+            ->orderBy('movie_people.name')
+            ->get(['movie_people.id', 'movie_people.name']);
+
         return response()->json(['success' => true, 'data' => $people]);
     }
 
