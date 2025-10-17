@@ -4,8 +4,11 @@ use App\Http\Controllers\Socialite\ProviderCallbackController;
 use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MovieController;
+use App\Http\Controllers\PeopleController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Models\Movie;
+use App\Models\Genre;
 
 Route::get('/', [MovieController::class, 'index'])
     ->name('home');
@@ -43,13 +46,36 @@ Route::get('/login', [AuthController::class, 'login'])
 
 Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.show');
 
-Route::get('/movie/add', function () {
-    return view('pages.manage-movie', ['editing' => false]);
-})->name('movie.add');
+// Manage Movie (Blade)
+Route::get('/movies/manage', function () {
+    $allGenres = Genre::orderBy('name')->get();
+    return view('manageMovie', [
+        'editing' => false,
+        'movie' => null,
+        'allGenres' => $allGenres,
+    ]);
+})->name('movies.manage.create');
 
-Route::get('/movie/edit/{id}', function ($id) {
-    return view('pages.manage-movie', ['editing' => true, 'movieId' => $id]);
-})->name('movie.edit');
+Route::get('/movies/manage/{id}', function ($id) {
+    $movie = Movie::with(['genres', 'countries', 'languages'])->findOrFail($id);
+    $allGenres = Genre::orderBy('name')->get();
+    return view('manageMovie', [
+        'editing' => true,
+        'movie' => $movie,
+        'allGenres' => $allGenres,
+    ]);
+})->name('movies.manage.edit');
+
+// Movies CRUD
+Route::post('/movies', [MovieController::class, 'store'])->name('movies.store');
+Route::post('/movies/{id}', [MovieController::class, 'update'])->name('movies.update');
+Route::delete('/movies/{id}', [MovieController::class, 'destroy'])->name('movies.destroy');
+
+// People endpoints (AJAX)
+Route::post('/people/fetch', [PeopleController::class, 'fetch'])->name('people.fetch');
+Route::post('/people/add', [PeopleController::class, 'add'])->name('people.add');
+Route::post('/people/remove', [PeopleController::class, 'remove'])->name('people.remove');
+Route::post('/people/search', [PeopleController::class, 'search'])->name('people.search');
 
 Route::get('/profile', function () {
     return view('pages.profile');

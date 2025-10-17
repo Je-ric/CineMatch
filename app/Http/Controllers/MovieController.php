@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\RatingReview;
+use App\Models\Genre;
+use App\Models\Country;
+use App\Models\Language;
 use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MovieController extends Controller
 {
@@ -169,5 +174,196 @@ class MovieController extends Controller
             'reviews' => $reviews,
             'relatedMovies' => $related,
         ]);
+    }
+
+    // Create a movie with public uploads and JSON-validated country/language
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'release_year' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'trailer_url' => 'nullable|string|max:2048',
+            'poster_file' => 'required|image|max:5120',
+            'background_file' => 'nullable|image|max:8192',
+            'genres' => 'array',
+            'genres.*' => 'integer|exists:genres,id',
+            'countryName' => 'required|string',
+            'languageName' => 'required|string',
+        ]);
+
+        $posterRelative = $this->storeImageToPublic($request->file('poster_file'), 'uploads/posters', $validated['title'], $validated['release_year'] ?? null);
+        $bgRelative = null;
+        if ($request->hasFile('background_file')) {
+            $bgRelative = $this->storeImageToPublic($request->file('background_file'), 'uploads/backgrounds', $validated['title'], $validated['release_year'] ?? null);
+        }
+
+        $movie = Movie::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'release_year' => $validated['release_year'] ?? null,
+            'poster_url' => $posterRelative,
+            'background_url' => $bgRelative,
+            'trailer_url' => $validated['trailer_url'] ?? null,
+        ]);
+
+        if (!empty($validated['genres'])) {
+            $movie->genres()->sync($validated['genres']);
+        }
+
+        $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
+        $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
+        if ($countryId) {
+            $movie->countries()->sync([$countryId]);
+        }
+        if ($languageId) {
+            $movie->languages()->sync([$languageId]);
+        }
+
+        return response()->json(['success' => true, 'id' => $movie->id]);
+    }
+
+    // Update a movie, optionally replacing images and syncing relations
+    public function update(Request $request, $id)
+    {
+        $movie = Movie::findOrFail($id);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'release_year' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'trailer_url' => 'nullable|string|max:2048',
+            'poster_file' => 'nullable|image|max:5120',
+            'background_file' => 'nullable|image|max:8192',
+            'genres' => 'array',
+            'genres.*' => 'integer|exists:genres,id',
+            'countryName' => 'required|string',
+            'languageName' => 'required|string',
+        ]);
+
+        if ($request->hasFile('poster_file')) {
+            $newPoster = $this->storeImageToPublic($request->file('poster_file'), 'uploads/posters', $validated['title'], $validated['release_year'] ?? null);
+            $this->deletePublicFile($movie->getRawOriginal('poster_url'));
+            $movie->poster_url = $newPoster;
+        }
+
+        if ($request->hasFile('background_file')) {
+            $newBg = $this->storeImageToPublic($request->file('background_file'), 'uploads/backgrounds', $validated['title'], $validated['release_year'] ?? null);
+            $this->deletePublicFile($movie->getRawOriginal('background_url'));
+            $movie->background_url = $newBg;
+        }
+
+        $movie->title = $validated['title'];
+        $movie->description = $validated['description'] ?? null;
+        $movie->release_year = $validated['release_year'] ?? null;
+        $movie->trailer_url = $validated['trailer_url'] ?? null;
+        $movie->save();
+
+        if (isset($validated['genres'])) {
+            $movie->genres()->sync($validated['genres']);
+        }
+
+        $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
+        $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
+        if ($countryId) {
+            $movie->countries()->sync([$countryId]);
+        }
+        if ($languageId) {
+            $movie->languages()->sync([$languageId]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    // Delete a movie and clean up files and pivots
+    public function destroy($id)
+    {
+        $movie = Movie::findOrFail($id);
+        $this->deletePublicFile($movie->getRawOriginal('poster_url'));
+        $this->deletePublicFile($movie->getRawOriginal('background_url'));
+        $movie->genres()->detach();
+        $movie->countries()->detach();
+        $movie->languages()->detach();
+        $movie->cast()->detach();
+        $movie->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // --- Helpers ---
+    private function storeImageToPublic($file, $subdir, $title, $year)
+    {
+        // normalize subdir
+        $subdir = trim($subdir, '/ ');
+        $safeTitle = Str::slug($title ?: 'movie');
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $yearPart = $year ? (int)$year : date('Y');
+        // slug_year_timestamp_random.ext
+        $name = sprintf('%s_%s_%s_%s.%s', $safeTitle, $yearPart, time(), Str::random(6), $ext);
+
+        $targetDir = public_path($subdir);
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0775, true);
+        }
+
+        $file->move($targetDir, $name);
+
+        // return relative path WITHOUT leading slash so asset(...) works consistently
+        return trim($subdir . '/' . $name, '/');
+    }
+
+    private function deletePublicFile($relativePath)
+    {
+        if (empty($relativePath)) return;
+        // accept paths with or without leading slash
+        $relativePath = ltrim($relativePath, '/ ');
+        $full = public_path($relativePath);
+        if (is_file($full)) {
+            @unlink($full);
+        }
+    }
+
+    private function findOrCreateCountryFromJson(string $countryName): ?int
+    {
+        $countryName = trim($countryName);
+        if ($countryName === '') return null;
+
+        $jsonPath = base_path('Movie/JSON/countries.json');
+        if (!is_file($jsonPath)) {
+            $jsonPath = base_path('Movie/JSON/country.json');
+        }
+        $allowed = [];
+        if (is_file($jsonPath)) {
+            $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
+            foreach ($arr as $row) {
+                $allowed[] = $row['country'] ?? $row['name'] ?? null;
+            }
+            $allowed = array_filter(array_map('strval', $allowed));
+        }
+        if (!empty($allowed) && !in_array($countryName, $allowed, true)) {
+            return null;
+        }
+        $model = Country::firstOrCreate(['name' => $countryName]);
+        return $model->id;
+    }
+
+    private function findOrCreateLanguageFromJson(string $languageName): ?int
+    {
+        $languageName = trim($languageName);
+        if ($languageName === '') return null;
+
+        $jsonPath = base_path('Movie/JSON/language.json');
+        $allowed = [];
+        if (is_file($jsonPath)) {
+            $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
+            foreach ($arr as $row) {
+                $allowed[] = $row['name'] ?? null;
+            }
+            $allowed = array_filter(array_map('strval', $allowed));
+        }
+        if (!empty($allowed) && !in_array($languageName, $allowed, true)) {
+            return null;
+        }
+        $model = Language::firstOrCreate(['name' => $languageName]);
+        return $model->id;
     }
 }
