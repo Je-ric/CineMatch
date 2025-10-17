@@ -204,7 +204,8 @@
 
         <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
             @foreach($relatedMovies ?? [] as $related)
-                <div class="group rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 hover:border-green-500/70 transition">
+                <x-movie-card :movie="$movie" />
+                {{-- <div class="group rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 hover:border-green-500/70 transition">
                     <div class="relative">
                         <a href="{{ route('movie.show', $related->id) }}">
                             <img src="{{ $related->poster_url }}"
@@ -221,7 +222,7 @@
                     <div class="p-4">
                         <h5 class="font-semibold text-base text-white truncate">{{ $related->title }}</h5>
                     </div>
-                </div>
+                </div> --}}
             @endforeach
         </div>
     </section>
