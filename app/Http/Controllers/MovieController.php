@@ -2,41 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Movie;
+use App\Models\RatingReview;
+use Illuminate\Support\Collection;
 
 class MovieController extends Controller
 {
-
     public function index()
     {
-        // ✅ Fetch all movies
-        $movies = DB::connection('movies')
-            ->table('movies')
-            ->leftJoin('countries', 'movies.country_id', '=', 'countries.id')
-            ->leftJoin('languages', 'movies.language_id', '=', 'languages.id')
-            ->leftJoin('ratings_reviews', 'movies.id', '=', 'ratings_reviews.movie_id')
-            ->select(
-                'movies.id',
-                'movies.title',
-                'movies.release_year',
-                'movies.poster_url',
-                'movies.description',
-                'countries.name as country_name',
-                'languages.name as language_name',
-                DB::raw('ROUND(AVG(ratings_reviews.rating), 1) as avg_rating')
-            )
-            ->groupBy(
-                'movies.id',
-                'movies.title',
-                'movies.release_year',
-                'movies.poster_url',
-                'movies.description',
-                'countries.name',
-                'languages.name'
-            )
-            ->get();
+        // eager load relations so views/controllers don't need raw queries
+        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])->get();
 
-        // If no data, provide placeholder movies so the UI has something to show
+        // If no movies, provide fallback placeholders so the UI has something to render
         if ($movies->isEmpty()) {
             $movies = collect([
                 (object)[
@@ -44,195 +21,153 @@ class MovieController extends Controller
                     'title' => 'Sample Movie — Add real data',
                     'release_year' => date('Y'),
                     'poster_url' => asset('images/placeholders/sample1.jpg'),
-                    'description' => 'No movie data available yet. This is placeholder content.',
+                    'avg_rating' => null,
                     'country_name' => 'Unknown',
                     'language_name' => 'Unknown',
-                    'avg_rating' => null,
+                    'genre_ids' => '',
                 ],
                 (object)[
                     'id' => 1,
                     'title' => 'Another Sample Movie',
                     'release_year' => date('Y'),
                     'poster_url' => asset('images/placeholders/sample2.jpg'),
-                    'description' => 'Placeholder entry. Replace with real movies from the database.',
+                    'avg_rating' => null,
                     'country_name' => 'Unknown',
                     'language_name' => 'Unknown',
-                    'avg_rating' => null,
+                    'genre_ids' => '',
                 ],
             ]);
         }
 
-        // ✅ Trending = Top 12 highest-rated movies (with non-null ratings)
-        $trending = $movies
-            ->whereNotNull('avg_rating')
-            ->sortByDesc('avg_rating')
-            ->take(12)
-            ->values();
+        // Normalize to simple arrays for blade JS consumption
+        $moviesJson = $movies->map(function ($m) {
+            // if $m is an Eloquent model it will have relationships; placeholders are stdClass above
+            $avg = null;
+            if (isset($m->ratings) && $m->ratings instanceof Collection) {
+                $avg = $m->ratings->avg('rating');
+                $avg = $avg !== null ? round($avg, 1) : null;
+            } elseif (isset($m->avg_rating)) {
+                $avg = $m->avg_rating;
+            }
 
-        return view('home', [
-            'moviesJson' => $movies,
-            'trendingJson' => $trending,
-        ]);
+            return [
+                'id' => $m->id ?? 0,
+                'title' => $m->title ?? 'Untitled',
+                'release_year' => $m->release_year ?? null,
+                // Accessor on Movie model will turn relative urls into full asset() urls
+                'poster_url' => $m->poster_url ?? ($m->poster ?? asset('images/placeholders/sample1.jpg')),
+                'avg_rating' => $avg,
+                'country_name' => isset($m->countries) && $m->countries->first() ? $m->countries->first()->name : ($m->country_name ?? null),
+                'language_name' => isset($m->languages) && $m->languages->first() ? $m->languages->first()->name : ($m->language_name ?? null),
+                'genre_ids' => isset($m->genres) ? $m->genres->pluck('id')->implode(',') : ($m->genre_ids ?? ''),
+            ];
+        })->toArray();
+
+        // Trending - choose top-rated then fallback to recent; if empty provide placeholder
+        $trendingCollection = Movie::with(['ratings'])->get()->map(function ($m) {
+            $avg = $m->ratings->avg('rating');
+            $m->avg_rating = $avg !== null ? round($avg, 1) : null;
+            return $m;
+        });
+
+        $trending = $trendingCollection->sortByDesc('avg_rating')->take(6);
+
+        if ($trending->isEmpty()) {
+            $trending = collect([
+                [
+                    'id' => 0,
+                    'title' => 'No trending movies yet',
+                    'poster_url' => asset('images/placeholders/no_trending.jpg'),
+                    'release_year' => null,
+                    'avg_rating' => null,
+                    'country_name' => null,
+                    'language_name' => null,
+                    'genre_ids' => '',
+                ],
+            ]);
+        } else {
+            $trending = $trending->map(function ($m) {
+                return [
+                    'id' => $m->id,
+                    'title' => $m->title,
+                    'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
+                    'release_year' => $m->release_year,
+                    'avg_rating' => $m->avg_rating,
+                    'country_name' => $m->countries->first()?->name ?? null,
+                    'language_name' => $m->languages->first()?->name ?? null,
+                    'genre_ids' => $m->genres->pluck('id')->implode(','),
+                ];
+            })->toArray();
+        }
+
+        $trendingJson = is_array($trending) ? $trending : $trending->toArray();
+
+        return view('home', compact('moviesJson', 'trendingJson'));
     }
 
     public function show($id)
     {
-        try {
-            // Get movie with basic info
-            $movie = DB::connection('mysql_movies')
-                ->table('movies')
-                ->leftJoin('countries', 'movies.country_id', '=', 'countries.id')
-                ->leftJoin('languages', 'movies.language_id', '=', 'languages.id')
-                ->select(
-                    'movies.*',
-                    'countries.name as country_name',
-                    'languages.name as language_name'
-                )
-                ->where('movies.id', $id)
-                ->first();
+        $movie = Movie::with(['genres', 'countries', 'languages', 'cast', 'ratings'])->find($id);
 
-            if (!$movie) {
-                abort(404, 'Movie not found');
-            }
-
-            // Fix image URLs - add base URL if not already present
-            if ($movie->poster_url && !str_starts_with($movie->poster_url, 'http')) {
-                $movie->poster_url = asset($movie->poster_url);
-            }
-
-            if ($movie->background_url && !str_starts_with($movie->background_url, 'http')) {
-                $movie->background_url = asset($movie->background_url);
-            }
-
-            // Fix YouTube URL - extract video ID
-            if ($movie->trailer_url) {
-                // Handle different YouTube URL formats
-                if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/', $movie->trailer_url, $matches)) {
-                    $movie->youtube_id = $matches[1];
-                } else {
-                    $movie->youtube_id = null;
-                }
-            }
-
-            // Get genres
-            $genres = DB::connection('mysql_movies')
-                ->table('movie_genres')
-                ->join('genres', 'movie_genres.genre_id', '=', 'genres.id')
-                ->where('movie_genres.movie_id', $id)
-                ->pluck('genres.name')
-                ->toArray();
-
-            // Get directors
-            $directors = DB::connection('mysql_movies')
-                ->table('movie_cast')
-                ->join('movie_people', 'movie_cast.person_id', '=', 'movie_people.id')
-                ->where('movie_cast.movie_id', $id)
-                ->where('movie_cast.role', 'Director')
-                ->select('movie_people.name')
-                ->get();
-
-            // Get actors
-            $actors = DB::connection('mysql_movies')
-                ->table('movie_cast')
-                ->join('movie_people', 'movie_cast.person_id', '=', 'movie_people.id')
-                ->where('movie_cast.movie_id', $id)
-                ->where('movie_cast.role', 'Actor')
-                ->select('movie_people.name')
-                ->limit(5)
-                ->get();
-
-            // Get reviews with usernames
-            $reviewsData = DB::connection('mysql_movies')
-                ->table('ratings_reviews')
-                ->where('movie_id', $id)
-                ->whereNotNull('review')
-                ->select('user_id', 'rating', 'review', 'created_at')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
-                ->get();
-
-            // Transform reviews to include username
-            $reviews = $reviewsData->map(function($review) {
-                $user = DB::table('users')->where('id', $review->user_id)->first();
-
-                $reviewObj = new \stdClass();
-                $reviewObj->username = $user ? ($user->name ?? $user->username ?? $user->email ?? 'Anonymous') : 'Anonymous';
-                $reviewObj->rating = $review->rating;
-                $reviewObj->review = $review->review;
-
-                return $reviewObj;
-            });
-
-            // Provide a friendly placeholder if there are no reviews
-            if ($reviews->isEmpty()) {
-                $placeholder = new \stdClass();
-                $placeholder->username = 'No reviews yet';
-                $placeholder->rating = null;
-                $placeholder->review = 'Be the first to review this movie.';
-                $reviews = collect([$placeholder]);
-            }
-
-            // Get related movies with average ratings
-            $relatedMovies = DB::connection('mysql_movies')
-                ->table('movies')
-                ->join('movie_genres', 'movies.id', '=', 'movie_genres.movie_id')
-                ->leftJoin('ratings_reviews', 'movies.id', '=', 'ratings_reviews.movie_id')
-                ->whereIn('movie_genres.genre_id', function($query) use ($id) {
-                    $query->select('genre_id')
-                        ->from('movie_genres')
-                        ->where('movie_id', $id);
-                })
-                ->where('movies.id', '!=', $id)
-                ->select(
-                    'movies.id',
-                    'movies.title',
-                    'movies.poster_url',
-                    'movies.release_year',
-                    DB::raw('ROUND(AVG(ratings_reviews.rating), 1) as avg_rating'),
-                    DB::raw('COUNT(DISTINCT ratings_reviews.id) as review_count')
-                )
-                ->groupBy('movies.id', 'movies.title', 'movies.poster_url', 'movies.release_year')
-                ->limit(6)
-                ->get();
-
-            // If no related movies found, add a placeholder entry
-            if ($relatedMovies->isEmpty()) {
-                $relatedMovies = collect([
-                    (object)[
-                        'id' => 0,
-                        'title' => 'No related movies found',
-                        'poster_url' => asset('images/placeholders/no_related.jpg'),
-                        'release_year' => null,
-                        'avg_rating' => null,
-                        'review_count' => 0,
-                    ]
-                ]);
-            }
-
-            // Fix related movies poster URLs
-            foreach ($relatedMovies as $related) {
-                if (!empty($related->poster_url) && !str_starts_with($related->poster_url, 'http')) {
-                    $related->poster_url = asset($related->poster_url);
-                }
-            }
-
-            // Ensure genres, directors and actors always have at least a placeholder
-            if (empty($genres)) {
-                $genres = ['Unknown'];
-            }
-
-            if ($directors->isEmpty()) {
-                $directors = collect([(object)['name' => 'Unknown']]);
-            }
-
-            if ($actors->isEmpty()) {
-                $actors = collect([(object)['name' => 'Unknown']]);
-            }
-
-            return view('viewMovie', compact('movie', 'genres', 'directors', 'actors', 'reviews', 'relatedMovies'));
-
-        } catch (\Exception $e) {
-            return "Error: " . $e->getMessage() . "<br>File: " . $e->getFile() . "<br>Line: " . $e->getLine();
+        // If movie not found, provide a friendly placeholder object
+        if (!$movie) {
+            $movie = (object)[
+                'id' => 0,
+                'title' => 'Movie not found',
+                'description' => 'This movie does not exist yet. Add real data in the admin panel.',
+                'release_year' => null,
+                'poster_url' => asset('images/placeholders/sample1.jpg'),
+                'background_url' => asset('images/placeholders/background.jpg'),
+                'trailer_url' => null,
+                'genres' => collect([]),
+                'countries' => collect([]),
+                'languages' => collect([]),
+                'cast' => collect([]),
+            ];
         }
+
+        // Reviews - if none, add a placeholder review
+        $reviews = RatingReview::where('movie_id', $id)->with('user')->get();
+        if ($reviews->isEmpty()) {
+            $reviews = collect([(object)[
+                'username' => 'No reviews yet',
+                'rating' => null,
+                'review' => 'Be the first to review this movie.',
+            ]]);
+        } else {
+            // Normalize review objects with username
+            $reviews = $reviews->map(function ($r) {
+                return (object)[
+                    'username' => $r->user?->name ?? $r->user?->username ?? 'Anonymous',
+                    'rating' => $r->rating,
+                    'review' => $r->review,
+                ];
+            });
+        }
+
+        // Related movies by shared genres; fallback placeholder if none
+        $related = collect();
+        if (isset($movie->genres) && $movie->genres->isNotEmpty()) {
+            $genreIds = $movie->genres->pluck('id')->toArray();
+            $related = Movie::whereHas('genres', function ($q) use ($genreIds) {
+                $q->whereIn('genres.id', $genreIds);
+            })->where('id', '!=', $movie->id)->take(6)->get();
+        }
+
+        if ($related->isEmpty()) {
+            $related = collect([(object)[
+                'id' => 0,
+                'title' => 'No related movies found',
+                'poster_url' => asset('images/placeholders/no_related.jpg'),
+                'release_year' => null,
+                'avg_rating' => null,
+            ]]);
+        }
+
+        return view('viewMovie', [
+            'movie' => $movie,
+            'reviews' => $reviews,
+            'relatedMovies' => $related,
+        ]);
     }
 }

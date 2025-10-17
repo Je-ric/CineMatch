@@ -39,3 +39,9 @@ Note: The other tables are just pivot
     - Movie Language
     - Movie Country
     - Movie Cast
+
+
+php artisan make:Controller FavoriteController
+php artisan make:Controller PeopleController
+php artisan make:Controller RateReviewController
+php artisan make:Controller RecommendController

@@ -13,12 +13,16 @@ class AuthController extends Controller
     {
 
         $request->validate([
-            'username' => 'required|string|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'username' => 'required|string|unique:users,username',
             'password' => 'required|string|min:6',
         ]);
 
-        // Create a new user
+        // Create a new user (provide required name & email to satisfy at magmatch sa DB)
         $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
             'role' => 'user',
             'username' => $request->username,
             'password' => Hash::make($request->password),
