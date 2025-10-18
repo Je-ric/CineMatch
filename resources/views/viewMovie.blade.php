@@ -87,7 +87,8 @@
                             </div>
                         </div>
 
-                        <div class="space-y-3">
+                        {{-- Rating Summary --}}
+                        <div class="text-center space-y-3">
                             @if(auth()->check())
                                 <x-review-section
                                     :movie="$movie"
@@ -97,28 +98,7 @@
                                 />
                             @endif
                         </div>
-                        {{-- Rating Summary --}}
-                        {{-- <div class="text-center space-y-3">
-                            @php
-                                $avgRating = $reviews->avg('rating') ?? 0;
-                                $totalReviews = $reviews->count();
-                            @endphp
-                            <div id="average-stars" class="star-rating justify-center">
-                                @for($i = 0; $i < floor($avgRating); $i++)
-                                    <i class="bx bxs-star star text-yellow-400"></i>
-                                @endfor
-                                @for($i = 0; $i < (5 - floor($avgRating)); $i++)
-                                    <i class="bx bx-star star empty"></i>
-                                @endfor
-                            </div>
-                            <div class="text-xl font-bold text-accent">
-                                <span id="average-rating">{{ number_format($avgRating, 1) }}</span>/5
-                            </div>
-                            <div class="text-sm text-text-muted">
-                                <span id="total-reviews">{{ $totalReviews }}</span>
-                                review{{ $totalReviews !== 1 ? 's' : '' }}
-                            </div>
-                        </div> --}}
+
                     </div>
 
                     <div class="flex flex-wrap gap-3">
