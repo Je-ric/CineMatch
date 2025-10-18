@@ -6,7 +6,7 @@
             <i class='bx bx-play-circle'></i> Trailer
         </h2>
         <div class="aspect-video rounded-lg overflow-hidden bg-base-300 max-w-lg mx-auto">
-           @if(isset($movie->youtube_id))
+            @if(isset($movie->youtube_id))
                 <iframe class="w-full h-full"
                         src="https://www.youtube.com/embed/{{ $movie->youtube_id }}"
                         allowfullscreen></iframe>

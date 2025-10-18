@@ -377,7 +377,7 @@ class MovieController extends Controller
         $jsonPathCandidates = [
             public_path('JSON/countries.json'),
             public_path('JSON/country.json'),
-            base_path('JSON/countries.json'), // keep legacy fallback if present
+            base_path('JSON/countries.json'), 
             base_path('JSON/country.json'),
         ];
 

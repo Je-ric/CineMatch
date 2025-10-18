@@ -50,6 +50,7 @@ php artisan make:Controller RecommendController
 
 php artisan make:livewire favorite-button
 composer require livewire/livewire
+php artisan make:livewire movie-reviews
 
 
 
