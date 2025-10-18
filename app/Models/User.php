@@ -9,6 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Movie;
+use App\Models\RatingReview;
 
 class User extends Authenticatable
 {
@@ -67,29 +71,27 @@ class User extends Authenticatable
         ];
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    public function favorites()
+    /**
+     * Movies this user favorited (pivot user_favorites)
+     *
+     * @return BelongsToMany<Movie>
+     */
+    public function favorites(): BelongsToMany
     {
         return $this->belongsToMany(
             Movie::class,
             'user_favorites',
             'user_id',
             'movie_id'
-        );
+        )->withTimestamps();
     }
 
-    public function ratings()
+    /**
+     * User ratings/reviews
+     *
+     * @return HasMany<RatingReview>
+     */
+    public function ratings(): HasMany
     {
         return $this->hasMany(
             RatingReview::class,

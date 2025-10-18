@@ -46,3 +46,11 @@ php artisan make:Controller FavoriteController
 php artisan make:Controller PeopleController
 php artisan make:Controller RateReviewController
 php artisan make:Controller RecommendController
+
+
+php artisan make:livewire favorite-button
+composer require livewire/livewire
+
+
+
+https://filamentapps.com/blog/troubleshooting-laravel-livewire-resolving-the-unable-to-find-component-error

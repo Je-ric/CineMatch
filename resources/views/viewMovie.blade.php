@@ -108,11 +108,16 @@
                             </a>
                         @endif
 
-                        <x-favorite-button
+                        {{-- <x-favorite-button
                             :movie="$movie"
                             :is-favorited="auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists()"
                             :favorite-count="$movie->favoritedBy()->count()"
-                        />
+                        /> --}}
+                       @livewire('favorite-button', [
+                            'movie' => $movie,
+                            'isFavorited' => auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists(),
+                            'favoriteCount' => $movie->favoritedBy()->count()
+                        ])
 
                     </div>
                 </div>

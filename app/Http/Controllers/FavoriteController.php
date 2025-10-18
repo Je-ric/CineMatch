@@ -9,39 +9,40 @@ use App\Models\User; // added import
 
 class FavoriteController extends Controller
 {
+    // Unused
 
-    public function toggle(Request $request)
-    {
-        $data = $request->validate([
-            'movie_id' => 'required|integer|exists:movies,id',
-        ]);
+    // public function toggle(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'movie_id' => 'required|integer|exists:movies,id',
+    //     ]);
 
-        /** @var \App\Models\User $user */ // type hint for Intelephense
-        $user = Auth::user();
+    //     /** @var \App\Models\User $user */ // type hint for Intelephense
+    //     $user = Auth::user();
 
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
-        }
+    //     if (!$user) {
+    //         return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+    //     }
 
-        $movieId = $data['movie_id'];
+    //     $movieId = $data['movie_id'];
 
-        // check existing
-        $exists = $user->favorites()->wherePivot('movie_id', $movieId)->exists();
+    //     // check existing
+    //     $exists = $user->favorites()->wherePivot('movie_id', $movieId)->exists();
 
-        if ($exists) {
-            $user->favorites()->detach($movieId);
-            $added = false;
-        } else {
-            $user->favorites()->attach($movieId);
-            $added = true;
-        }
+    //     if ($exists) {
+    //         $user->favorites()->detach($movieId);
+    //         $added = false;
+    //     } else {
+    //         $user->favorites()->attach($movieId);
+    //         $added = true;
+    //     }
 
-        $totalFavorites = Movie::find($movieId)->favoritedBy()->count();
+    //     $totalFavorites = Movie::find($movieId)->favoritedBy()->count();
 
-        return response()->json([
-            'success' => true,
-            'added' => $added,
-            'totalFavorites' => (int)$totalFavorites,
-        ]);
-    }
+    //     return response()->json([
+    //         'success' => true,
+    //         'added' => $added,
+    //         'totalFavorites' => (int)$totalFavorites,
+    //     ]);
+    // }
 }

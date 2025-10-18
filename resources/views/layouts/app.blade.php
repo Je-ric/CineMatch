@@ -15,6 +15,8 @@
             color: #fff;
         }
     </style>
+
+    @livewireStyles
 </head>
 <body>
     @include('includes.links')
@@ -27,5 +29,6 @@
     @include('layouts.footer')
 
     @stack('scripts')
+    @livewireScripts
 </body>
 </html>
