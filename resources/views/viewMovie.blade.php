@@ -87,14 +87,16 @@
                             </div>
                         </div>
 
-                         @if(auth()->check())
-                            <x-review-section
-                                :movie="$movie"
-                                :user-review="$reviews->where('user_id', auth()->id())->first()"
-                                :avg-rating="$reviews->avg('rating') ?? 0"
-                                :total-reviews="$reviews->count()"
-                            />
-                        @endif
+                        <div class="space-y-3">
+                            @if(auth()->check())
+                                <x-review-section
+                                    :movie="$movie"
+                                    :user-review="$reviews->where('user_id', auth()->id())->first()"
+                                    :avg-rating="$reviews->avg('rating') ?? 0"
+                                    :total-reviews="$reviews->count()"
+                                />
+                            @endif
+                        </div>
                         {{-- Rating Summary --}}
                         {{-- <div class="text-center space-y-3">
                             @php
@@ -119,7 +121,6 @@
                         </div> --}}
                     </div>
 
-                    {{-- Buttons --}}
                     <div class="flex flex-wrap gap-3">
                         @if(!empty($movie->trailer_url))
                             <a href="#trailer-section" class="btn btn-accent">
@@ -139,7 +140,7 @@
         </div>
     </div>
 
-    {{-- Overview Section --}}
+    {{-- Overview --}}
     <section class="relative z-10 max-w-7xl mx-auto px-4 pb-16 space-y-8">
         <div class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6 md:p-8">
             <h2 class="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3 text-accent">
@@ -150,7 +151,6 @@
             </p>
         </div>
 
-        {{-- Trailer + Reviews --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {{-- Trailer --}}
             <x-trailer-section :movie="$movie" />
