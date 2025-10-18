@@ -13,43 +13,23 @@ use Illuminate\Support\Facades\DB;
 
 class RecommendController extends Controller
 {
-    /**
-     * Get trending movies based on average rating
-     */
-    public function getTrending($limit = 12)
+    // remove the controller-in-controller show signature if present elsewhere;
+    // keep only recommendation helpers here
+/**
+ * Get the user's favorite movies
+ */
+public function getFavorites($userId = null, $limit = 12)
     {
-        $limit = $this->clampLimit($limit);
-
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(ratings_reviews.rating), 0), 2) AS avg_rating')
-            ->selectRaw('COUNT(ratings_reviews.id) AS total_reviews')
-            ->leftJoin('ratings_reviews', 'ratings_reviews.movie_id', '=', 'movies.id')
-            ->groupBy('movies.id')
-            ->orderByRaw('(AVG(ratings_reviews.rating) IS NULL), AVG(ratings_reviews.rating) DESC, COUNT(ratings_reviews.id) DESC, movies.release_year DESC')
-            ->limit($limit)
-            ->get();
-
-        return $this->formatMovies($movies);
-    }
-
-    /**
-     * Get user's favorite movies
-     */
-    public function getFavorites($userId, $limit = 12)
-    {
+        $userId = $userId ?? Auth::id();
         if (!$userId) return [];
+
         $limit = $this->clampLimit($limit);
 
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(ratings_reviews.rating), 0), 2) AS avg_rating')
-            ->selectRaw('COUNT(ratings_reviews.id) AS total_reviews')
-            ->join('user_favorites', 'user_favorites.movie_id', '=', 'movies.id')
-            ->leftJoin('ratings_reviews', 'ratings_reviews.movie_id', '=', 'movies.id')
-            ->where('user_favorites.user_id', $userId)
-            ->groupBy('movies.id')
-            ->orderBy('movies.title', 'ASC')
+        $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->whereHas('favoritedBy', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->orderBy('title', 'ASC')
             ->limit($limit)
             ->get();
 
@@ -58,26 +38,45 @@ class RecommendController extends Controller
 
     /**
      * Get movies the user has rated/reviewed
+     * If $userId is null it will use the currently authenticated user.
      */
-    public function getRated($userId, $limit = 12)
+    public function getRated($userId = null, $limit = 12)
     {
+        $userId = $userId ?? Auth::id();
         if (!$userId) return [];
+
         $limit = $this->clampLimit($limit);
 
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(all_reviews.rating), 0), 2) AS avg_rating')
-            ->selectRaw('COUNT(all_reviews.id) AS total_reviews')
-            ->join('ratings_reviews as user_reviews', 'user_reviews.movie_id', '=', 'movies.id')
-            ->leftJoin('ratings_reviews as all_reviews', 'all_reviews.movie_id', '=', 'movies.id')
-            ->where('user_reviews.user_id', $userId)
-            ->groupBy('movies.id')
-            ->orderByRaw('MAX(user_reviews.id) DESC')
+        $movies = Movie::with(['genres', 'ratings'])
+            ->whereHas('ratings', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->get()
+            ->sortByDesc(function ($m) use ($userId) {
+                return optional($m->ratings->where('user_id', $userId)->sortByDesc('created_at')->first())->created_at;
+            })
+            ->take($limit)
+            ->values();
+
+        return $this->formatMovies($movies);
+    }
+    /**
+     * Get trending movies based on average rating
+     */
+    public function getTrending($limit = 12)
+    {
+        $limit = $this->clampLimit($limit);
+
+        // eager load ratings collection and compute averages in PHP to avoid SQL that references wrong column/table
+        $movies = Movie::with(['genres', 'ratings'])
+            ->orderBy('title', 'asc')
             ->limit($limit)
             ->get();
 
         return $this->formatMovies($movies);
     }
+
+
 
     /**
      * Get recommendations based on user's favorite genres
@@ -87,35 +86,41 @@ class RecommendController extends Controller
         if (!$userId) return [];
         $limit = $this->clampLimit($limit);
 
-        // Get top 5 genres from user's favorites
-        $topGenres = DB::table('user_favorites')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'user_favorites.movie_id')
-            ->where('user_favorites.user_id', $userId)
-            ->groupBy('movie_genres.genre_id')
-            ->orderByRaw('COUNT(*) DESC')
-            ->limit(5)
-            ->pluck('movie_genres.genre_id')
-            ->toArray();
+        $topGenres = Genre::withCount(['movies as fav_count' => function ($q) use ($userId) {
+            $q->whereHas('favoritedBy', function ($q2) use ($userId) {
+                $q2->where('user_id', $userId);
+            });
+        }])
+        ->having('fav_count', '>', 0)
+        ->orderByDesc('fav_count')
+        ->limit(5)
+        ->pluck('id')
+        ->toArray();
 
         if (empty($topGenres)) return [];
 
-        // Get movies with these genres, excluding user's favorites
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(ratings_reviews.rating), 0), 2) AS avg_rating')
-            ->selectRaw('COUNT(DISTINCT movie_genres.genre_id) AS match_genres')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'movies.id')
-            ->leftJoin('ratings_reviews', 'ratings_reviews.movie_id', '=', 'movies.id')
-            ->whereIn('movie_genres.genre_id', $topGenres)
-            ->whereNotIn('movies.id', function($query) use ($userId) {
-                $query->select('movie_id')
-                      ->from('user_favorites')
-                      ->where('user_id', $userId);
+        $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->whereHas('genres', function ($q) use ($topGenres) {
+                $q->whereIn('genres.id', $topGenres);
             })
-            ->groupBy('movies.id')
-            ->orderByRaw('match_genres DESC, (AVG(ratings_reviews.rating) IS NULL), AVG(ratings_reviews.rating) DESC, movies.release_year DESC')
-            ->limit($limit)
-            ->get();
+            ->whereDoesntHave('favoritedBy', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->get()
+            ->map(function ($m) use ($topGenres) {
+                $m->match_genres = $m->genres->pluck('id')->intersect($topGenres)->count();
+                return $m;
+            })
+            ->filter(function ($m) {
+                return $m->match_genres > 0;
+            })
+            ->sortByDesc(function ($m) {
+                // sort by match_genres, then avg rating (computed from collection), then release_year
+                $avg = $m->ratings->count() ? $m->ratings->avg('rating') : 0;
+                return [$m->match_genres, $avg, $m->release_year ?? 0];
+            })
+            ->take($limit)
+            ->values();
 
         return $this->formatMovies($movies);
     }
@@ -128,33 +133,25 @@ class RecommendController extends Controller
         if (!$userId) return [];
         $limit = $this->clampLimit($limit);
 
-        // Get top 3 countries from user's favorites
-        $topCountries = DB::table('user_favorites')
-            ->join('movies', 'movies.id', '=', 'user_favorites.movie_id')
-            ->where('user_favorites.user_id', $userId)
-            ->whereNotNull('movies.country_id')
-            ->groupBy('movies.country_id')
-            ->orderByRaw('COUNT(*) DESC')
+        $topCountries = Movie::whereHas('favoritedBy', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->whereNotNull('country_id')
+            ->select('country_id')
+            ->selectRaw('count(*) as cnt')
+            ->groupBy('country_id')
+            ->orderByDesc('cnt')
             ->limit(3)
-            ->pluck('movies.country_id')
+            ->pluck('country_id')
             ->toArray();
 
         if (empty($topCountries)) return [];
 
-        // Get movies from these countries, excluding user's favorites
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(ratings_reviews.rating), 0), 2) AS avg_rating')
-            ->leftJoin('ratings_reviews', 'ratings_reviews.movie_id', '=', 'movies.id')
-            ->whereIn('movies.country_id', $topCountries)
-            ->whereNotIn('movies.id', function($query) use ($userId) {
-                $query->select('movie_id')
-                      ->from('user_favorites')
-                      ->where('user_id', $userId);
+        $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->whereIn('country_id', $topCountries)
+            ->whereDoesntHave('favoritedBy', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
             })
-            ->groupBy('movies.id')
-            ->orderByRaw('(AVG(ratings_reviews.rating) IS NULL), AVG(ratings_reviews.rating) DESC, movies.release_year DESC')
-            ->limit($limit)
             ->get();
 
         return $this->formatMovies($movies);
@@ -167,146 +164,40 @@ class RecommendController extends Controller
     {
         $limit = $this->clampLimit($limit);
 
-        $query = Movie::with(['genres', 'countries', 'languages', 'ratings'])
-            ->select('movies.*')
-            ->selectRaw('ROUND(COALESCE(AVG(ratings_reviews.rating), 0), 2) AS avg_rating')
-            ->selectRaw('COUNT(ratings_reviews.id) AS total_reviews')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'movies.id')
-            ->leftJoin('ratings_reviews', 'ratings_reviews.movie_id', '=', 'movies.id')
-            ->where('movie_genres.genre_id', $genreId);
+        $query = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->whereHas('genres', function ($q) use ($genreId) {
+                $q->where('genres.id', $genreId);
+            });
 
         if ($userId > 0) {
-            $query->whereNotIn('movies.id', function($subQuery) use ($userId) {
-                $subQuery->select('movie_id')
-                         ->from('user_favorites')
-                         ->where('user_id', $userId);
+            $query->whereDoesntHave('favoritedBy', function ($subQuery) use ($userId) {
+                $subQuery->where('user_id', $userId);
             });
         }
 
-        $movies = $query->groupBy('movies.id')
-            ->orderByRaw('(AVG(ratings_reviews.rating) IS NULL), AVG(ratings_reviews.rating) DESC, movies.release_year DESC')
-            ->limit($limit)
-            ->get();
+        $movies = $query->get()->take($limit)->values();
 
         return $this->formatMovies($movies);
     }
 
     /**
-     * Get user's top genres with counts
-     */
-    public function getUserTopGenres($userId, $limit = 5)
-    {
-        if (!$userId) return [];
-        $limit = $this->clampLimit($limit, 10);
-
-        return DB::table('user_favorites')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'user_favorites.movie_id')
-            ->join('genres', 'genres.id', '=', 'movie_genres.genre_id')
-            ->where('user_favorites.user_id', $userId)
-            ->groupBy('genres.id', 'genres.name')
-            ->orderByRaw('COUNT(*) DESC')
-            ->limit($limit)
-            ->select('genres.id', 'genres.name', DB::raw('COUNT(*) as cnt'))
-            ->get()
-            ->toArray();
-    }
-
-    /**
-     * Get favorite counts by genre for user
-     */
-    public function getFavCountsByGenre($userId)
-    {
-        if (!$userId) return [];
-
-        return DB::table('user_favorites')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'user_favorites.movie_id')
-            ->join('genres', 'genres.id', '=', 'movie_genres.genre_id')
-            ->where('user_favorites.user_id', $userId)
-            ->groupBy('genres.id', 'genres.name')
-            ->havingRaw('COUNT(*) > 0')
-            ->orderByRaw('COUNT(*) DESC, genres.name ASC')
-            ->select('genres.id', 'genres.name', DB::raw('COUNT(*) as cnt'))
-            ->get()
-            ->toArray();
-    }
-
-    /**
-     * Get favorite counts by country for user
-     */
-    public function getFavCountsByCountry($userId)
-    {
-        if (!$userId) return [];
-
-        return DB::table('user_favorites')
-            ->join('movies', 'movies.id', '=', 'user_favorites.movie_id')
-            ->join('countries', 'countries.id', '=', 'movies.country_id')
-            ->where('user_favorites.user_id', $userId)
-            ->whereNotNull('movies.country_id')
-            ->groupBy('countries.id', 'countries.name')
-            ->havingRaw('COUNT(*) > 0')
-            ->orderByRaw('COUNT(*) DESC, countries.name ASC')
-            ->select('countries.id', 'countries.name', DB::raw('COUNT(*) as cnt'))
-            ->get()
-            ->toArray();
-    }
-
-    /**
-     * Get rated counts by genre for user
-     */
-    public function getRatedCountsByGenre($userId)
-    {
-        if (!$userId) return [];
-
-        return DB::table('ratings_reviews')
-            ->join('movie_genres', 'movie_genres.movie_id', '=', 'ratings_reviews.movie_id')
-            ->join('genres', 'genres.id', '=', 'movie_genres.genre_id')
-            ->where('ratings_reviews.user_id', $userId)
-            ->groupBy('genres.id', 'genres.name')
-            ->havingRaw('COUNT(DISTINCT ratings_reviews.movie_id) > 0')
-            ->orderByRaw('COUNT(DISTINCT ratings_reviews.movie_id) DESC, genres.name ASC')
-            ->select('genres.id', 'genres.name', DB::raw('COUNT(DISTINCT ratings_reviews.movie_id) as cnt'))
-            ->get()
-            ->toArray();
-    }
-
-    /**
-     * Get rated counts by country for user
-     */
-    public function getRatedCountsByCountry($userId)
-    {
-        if (!$userId) return [];
-
-        return DB::table('ratings_reviews')
-            ->join('movies', 'movies.id', '=', 'ratings_reviews.movie_id')
-            ->join('countries', 'countries.id', '=', 'movies.country_id')
-            ->where('ratings_reviews.user_id', $userId)
-            ->whereNotNull('movies.country_id')
-            ->groupBy('countries.id', 'countries.name')
-            ->havingRaw('COUNT(DISTINCT ratings_reviews.movie_id) > 0')
-            ->orderByRaw('COUNT(DISTINCT ratings_reviews.movie_id) DESC, countries.name ASC')
-            ->select('countries.id', 'countries.name', DB::raw('COUNT(DISTINCT ratings_reviews.movie_id) as cnt'))
-            ->get()
-            ->toArray();
-    }
-
-    /**
      * Format movies for consistent output
      */
-    private function formatMovies($movies)
-    {
-        return $movies->map(function ($movie) {
-            return [
-                'id' => $movie->id,
-                'title' => $movie->title,
-                'release_year' => $movie->release_year,
-                'poster_url' => $movie->poster_url,
-                'country_name' => $movie->countries->first()?->name ?? null,
-                'language_name' => $movie->languages->first()?->name ?? null,
-                'avg_rating' => $movie->avg_rating ?? 0,
-                'total_reviews' => $movie->total_reviews ?? 0,
-            ];
-        })->toArray();
-    }
+   private function formatMovies($movies)
+{
+    return $movies->map(function ($movie) {
+        $totalReviews = $movie->ratings->count();
+        $avg = $totalReviews ? round($movie->ratings->avg('rating'), 2) : 0;
+
+        // Add extra attributes dynamically
+        $movie->country_name = optional($movie->country)->name;
+        $movie->language_name = optional($movie->language)->name;
+        $movie->avg_rating = $avg;
+        $movie->total_reviews = $totalReviews;
+
+        return $movie; // Return as Eloquent model
+    });
+}
 
     /**
      * Clamp limit to safe range

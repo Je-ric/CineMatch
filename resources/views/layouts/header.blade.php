@@ -31,7 +31,7 @@
 
             {{-- REGULAR USER: Profile (hide on profile page) --}}
             @if (Auth::user()->role === 'user' && !request()->routeIs('profile'))
-                <a href=""
+                <a href="/profile"
                    class="btn btn-circle btn-accent text-white tooltip flex items-center justify-center"
                    data-tip="My Profile">
                     <i class="bx bx-user text-xl"></i>

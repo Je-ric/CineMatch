@@ -10,7 +10,8 @@ use App\Models\Language;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 class MovieController extends Controller
 {
     public function index()
@@ -35,7 +36,7 @@ class MovieController extends Controller
 
         // Transform for frontend
         $moviesJson = $movies->map(function ($m) {
-            $avg = isset($m->ratings) && $m->ratings instanceof \Illuminate\Support\Collection
+            $avg = isset($m->ratings) && $m->ratings instanceof Collection
                 ? round($m->ratings->avg('rating') ?? 0, 1)
                 : ($m->avg_rating ?? null);
 
@@ -198,7 +199,7 @@ class MovieController extends Controller
         $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
 
         // Defensive transaction + explicit save
-        \DB::beginTransaction();
+        DB::beginTransaction();
         try {
             $movie = new Movie([
                 'title' => $validated['title'],
@@ -212,15 +213,15 @@ class MovieController extends Controller
             ]);
 
             if (! $movie->save()) {
-                \DB::rollBack();
-                \Log::error('Movie::save returned false', ['input' => $validated]);
+                DB::rollBack();
+                Log::error('Movie::save returned false', ['input' => $validated]);
                 return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie.']);
             }
 
             // ensure id present before touching pivots
             if (empty($movie->id)) {
-                \DB::rollBack();
-                \Log::error('Movie created but id missing', ['movie' => $movie->toArray()]);
+                DB::rollBack();
+                Log::error('Movie created but id missing', ['movie' => $movie->toArray()]);
                 return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie (no id).']);
             }
 
@@ -228,13 +229,13 @@ class MovieController extends Controller
                 $movie->genres()->sync($validated['genres']);
             }
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->route('movies.manage.edit', ['id' => $movie->id])
                 ->with('success', 'Movie created. You can now add people and media.');
         } catch (\Throwable $e) {
-            \DB::rollBack();
-            \Log::error('Failed creating movie', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'input' => $validated]);
+            DB::rollBack();
+            Log::error('Failed saving movie', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'input' => $validated]);
             return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie. Check logs.']);
         }
     }
