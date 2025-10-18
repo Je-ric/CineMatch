@@ -1,4 +1,8 @@
-@props(['reviews', 'movie'])
+@props(['reviews', 'movie', 'userReview' => null])
+
+@php
+    $isLoggedIn = auth()->check();
+@endphp
 
 <div class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6">
     <h2 class="text-2xl font-bold mb-6 flex items-center gap-3 text-accent">
@@ -7,8 +11,23 @@
     </h2>
 
     <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+        @if($userReview)
+            <button class="btn btn-outline btn-disabled" disabled title="Already reviewed">
+                <i class="bx bx-check"></i>
+                Already Reviewed
+            </button>
+        @else
+            <button
+                id="open-review-modal-{{ $movie->id }}"
+                class="btn btn-accent"
+                {{ !$isLoggedIn ? 'disabled title="Login required"' : '' }}
+            >
+                <i class="bx bx-star"></i>
+                Leave a Review
+            </button>
+        @endif
         @forelse($reviews as $review)
-            <div class="bg-card-bg/50 border border-border-color rounded-lg p-4 hover:bg-card-bg/70 transition-colors {{ $review->user_id === auth()->id() ? 'ring-2 ring-accent/50 bg-accent/10' : '' }}">
+            <div class="bg-card-bg/50 border border-border-color rounded-lg p-4 hover:bg-card-bg/70 transition-colors {{ $review->user_id === auth()->id() ? '' : '' }}">
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                         <h4 class="font-semibold text-accent">{{ $review->username }}</h4>

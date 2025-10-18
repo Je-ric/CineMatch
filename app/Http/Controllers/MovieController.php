@@ -318,7 +318,7 @@ class MovieController extends Controller
 
         // keep user on the manage/edit page so they can add persons immediately
         return redirect()->route('movies.manage.edit', ['id' => $id])
-                         ->with('success', 'Movie updated.');
+                            ->with('success', 'Movie updated.');
     }
 
     // Delete a movie and clean up files and pivots

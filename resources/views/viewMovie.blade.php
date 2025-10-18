@@ -87,8 +87,16 @@
                             </div>
                         </div>
 
+                         @if(auth()->check())
+                            <x-review-section
+                                :movie="$movie"
+                                :user-review="$reviews->where('user_id', auth()->id())->first()"
+                                :avg-rating="$reviews->avg('rating') ?? 0"
+                                :total-reviews="$reviews->count()"
+                            />
+                        @endif
                         {{-- Rating Summary --}}
-                        <div class="text-center space-y-3">
+                        {{-- <div class="text-center space-y-3">
                             @php
                                 $avgRating = $reviews->avg('rating') ?? 0;
                                 $totalReviews = $reviews->count();
@@ -108,7 +116,7 @@
                                 <span id="total-reviews">{{ $totalReviews }}</span>
                                 review{{ $totalReviews !== 1 ? 's' : '' }}
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
 
                     {{-- Buttons --}}
@@ -125,14 +133,6 @@
                             :favorite-count="$movie->favoritedBy()->count()"
                         />
 
-                        @if(auth()->check())
-                            <x-review-section
-                                :movie="$movie"
-                                :user-review="$reviews->where('user_id', auth()->id())->first()"
-                                :avg-rating="$reviews->avg('rating') ?? 0"
-                                :total-reviews="$reviews->count()"
-                            />
-                        @endif
                     </div>
                 </div>
             </div>
