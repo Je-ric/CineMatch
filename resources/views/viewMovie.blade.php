@@ -125,10 +125,8 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {{-- Trailer --}}
             <x-trailer-section :movie="$movie" />
 
-            {{-- Reviews --}}
             <x-reviews-list :reviews="$reviews" :movie="$movie" :real-review-count="$realReviewCount ?? 0" />
         </div>
     </section>

@@ -7,13 +7,6 @@
                 <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
                 <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
             </div>
-            @if(auth()->check() && (auth()->user()->role ?? null) === 'admin')
-                <div class="mb-4 md:mb-0">
-                    <a href="{{ route('movies.manage.create') }}" class="btn btn-accent">
-                        <i class="bx bx-plus"></i> Add New Movie
-                    </a>
-                </div>
-            @endif
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <label
                     class="flex items-center w-full md:w-96 bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
