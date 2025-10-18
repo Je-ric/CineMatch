@@ -5,7 +5,7 @@
 @endphp
 
 @if ($userReview)
-    <button class="btn btn-outline btn-disabled relative z-50" disabled title="Already reviewed">
+    <button class="btn border-accent bg-transparent relative z-50 text-accent hover:bg-transparent hover:text-white" title="Already reviewed">
         <i class="bx bx-check"></i> Already Reviewed
     </button>
 @else

@@ -1,27 +1,27 @@
 @extends('layouts.app')
 
 @section('page-content')
-
     @push('styles')
         <style>
             .star-rating {
                 display: inline-flex;
                 gap: 2px;
             }
+
             .star {
                 font-size: 1.5rem;
             }
+
             .star.empty {
                 color: #64748b;
             }
-    </style>
+        </style>
     @endpush
 
     <div class="mx-auto relative z-10">
-        @if(!empty($movie->background_url))
+        @if (!empty($movie->background_url))
             <div class="cover_follow mb-8 absolute top-0 left-0 w-full h-screen -z-10">
-                <div class="absolute inset-0 bg-cover"
-                    style="background-image: url('{{ $movie->background_url }}');">
+                <div class="absolute inset-0 bg-cover" style="background-image: url('{{ $movie->background_url }}');">
                 </div>
 
                 <div class="absolute inset-0 bg-gradient-to-t from-primary-bg via-primary-bg/80 to-transparent"></div>
@@ -30,17 +30,10 @@
 
         <div class="relative z-10 max-w-6xl mx-auto px-4 py-10">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {{-- <div class="dp-i-c-poster">
-                    <div class="film-poster">
-                        <img src="{{ $movie->poster_url }}" alt="{{ $movie->title }} poster" class="film-poster-img rounded-xl shadow-lg">
-                    </div>
-                </div> --}}
 
                 <div class="dp-i-c-poster">
                     <div class="film-poster">
-                        <img src="{{ $movie->poster_url }}"
-                            alt="{{ $movie->title }} poster"
-                            class="film-poster-img">
+                        <img src="{{ $movie->poster_url }}" alt="{{ $movie->title }} poster" class="film-poster-img">
                     </div>
                 </div>
 
@@ -56,73 +49,64 @@
                         <span>{{ $movie->language_name }}</span>
                     </div>
 
-                    {{-- Genres --}}
                     <div class="flex flex-wrap gap-2">
-                        @foreach($genres as $genre)
-                            <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium border border-accent/30">
+                        @foreach ($genres as $genre)
+                            <span
+                                class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium border border-accent/30">
                                 {{ $genre }}
                             </span>
                         @endforeach
                     </div>
 
-                    {{-- Directors & Cast with Rating Summary --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 items-start gap-8 md:gap-12">
+                        <div class="space-y-5">
                             <div>
-                                <h3 class="flex items-center gap-2 text-accent font-semibold text-lg mb-2">
-                                    <i class='bx bx-video'></i> Director(s)
+                                <h3 class="flex items-center gap-2 text-accent font-semibold text-base md:text-lg mb-1">
+                                    <i class='bx bx-video text-sm md:text-base'></i> Director(s)
                                 </h3>
-                                <p class="text-text-secondary">
-                                    {{ (is_array($directors) ? implode(' • ', array_column($directors, 'name')) : $directors->pluck('name')->implode(' • ')) ?: 'N/A' }}
-                                </p>
+                                <p class="text-sm md:text-base text-text-secondary leading-relaxed">
+    {{ ((is_array($directors) ? implode(' • ', array_column($directors, 'name')) : $directors->pluck('name')->implode(' • ')) ?: 'N/A') }}
+</p>
+
                             </div>
 
                             <div>
-                                <h3 class="flex items-center gap-2 text-accent font-semibold text-lg mb-2">
-                                    <i class='bx bxs-user'></i> Cast
+                                <h3 class="flex items-center gap-2 text-accent font-semibold text-base md:text-lg mb-1">
+                                    <i class='bx bxs-user text-sm md:text-base'></i> Cast
                                 </h3>
-                                <p class="text-text-secondary">
-                                    {{ (is_array($actors) ? implode(' • ', array_column($actors, 'name')) : $actors->pluck('name')->implode(' • ')) ?: 'N/A' }}
-                                </p>
+
+                                <p class="text-sm md:text-base text-text-secondary leading-relaxed">
+    {{ ((is_array($actors) ? implode(' • ', array_column($actors, 'name')) : $actors->pluck('name')->implode(' • ')) ?: 'N/A') }}
+</p>
                             </div>
                         </div>
 
-                        {{-- Rating Summary --}}
-                        <div class="text-center space-y-3">
-                            @if(auth()->check())
+                        {{-- Right: Rating Summary --}}
+                        <div class="text-center flex flex-col items-center justify-center space-y-2">
+                            @if (auth()->check())
                                 <x-review-section
-                                    :movie="$movie"
-                                    :user-review="$reviews->where('user_id', auth()->id())->first()"
-                                    :avg-rating="$reviews->avg('rating') ?? 0"
-                                    :total-reviews="$reviews->count()"
-                                />
+                :movie="$movie"
+                :user-review="$reviews->where('user_id', auth()->id())->first()"
+                :avg-rating="$avgRating ?? 0"
+                :total-reviews="$realReviewCount ?? 0" />
                             @endif
                         </div>
-
                     </div>
 
                     <div class="flex flex-wrap gap-3">
-                        @if(!empty($movie->trailer_url))
+                        @if (!empty($movie->trailer_url))
                             <a href="#trailer-section" class="btn btn-accent">
                                 <i class='bx bx-play'></i> Watch Trailer
                             </a>
                         @endif
 
-                        {{-- <x-favorite-button
-                            :movie="$movie"
-                            :is-favorited="auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists()"
-                            :favorite-count="$movie->favoritedBy()->count()"
-                        /> --}}
-                       @livewire('favorite-button', [
+                        @livewire('favorite-button', [
                             'movie' => $movie,
                             'isFavorited' => auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists(),
-                            'favoriteCount' => $movie->favoritedBy()->count()
+                            'favoriteCount' => $movie->favoritedBy()->count(),
                         ])
 
-                            <x-review-button
-                :movie="$movie"
-                :user-review="$reviews->where('user_id', auth()->id())->first()"
-            />
+                        <x-review-button :movie="$movie" :user-review="$reviews->where('user_id', auth()->id())->first()" />
                     </div>
                 </div>
             </div>
@@ -143,9 +127,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {{-- Trailer --}}
             <x-trailer-section :movie="$movie" />
-            
+
             {{-- Reviews --}}
-            <x-reviews-list :reviews="$reviews" :movie="$movie" />
+            <x-reviews-list :reviews="$reviews" :movie="$movie" :real-review-count="$realReviewCount ?? 0" />
         </div>
     </section>
 
@@ -158,11 +142,9 @@
         </div>
 
         <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            @foreach($relatedMovies ?? [] as $related)
+            @foreach ($relatedMovies ?? [] as $related)
                 <x-movie-card :movie="$related" />
             @endforeach
         </div>
     </section>
-
-
 @endsection

@@ -49,7 +49,7 @@
             </div>
 
             <div class="modal-action justify-center gap-4">
-                <button type="button" class="btn btn-outline" onclick="document.getElementById('review-modal-{{ $movie->id }}').close()">
+                <button type="button" class="btn border border-accent" onclick="document.getElementById('review-modal-{{ $movie->id }}').close()">
                     Cancel
                 </button>
                 <button type="submit" id="submit-review-{{ $movie->id }}" class="btn btn-accent">
@@ -160,6 +160,85 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.textContent = '{{ $userReview ? "Update Review" : "Submit Review" }}';
         });
     });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('review-form-{{ $movie->id }}');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const submitBtn = document.getElementById('submit-review-{{ $movie->id }}');
+        submitBtn.disabled = true;
+
+        fetch('{{ route("reviews.store") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: fd
+        })
+        .then(r => r.ok ? r.json() : r.text().then(t => { throw new Error(t || 'Server error'); }))
+        .then(data => {
+            if (!data.success) throw new Error('Save failed');
+
+            // update average & count
+            const avgEl = document.getElementById('average-rating-{{ $movie->id }}');
+            const totalEl = document.getElementById('total-reviews-{{ $movie->id }}');
+            if (data.average) {
+                if (avgEl) avgEl.textContent = (data.average.avg !== null) ? parseFloat(data.average.avg).toFixed(1) : '0.0';
+                if (totalEl) totalEl.textContent = data.average.total ?? 0;
+            }
+
+            // Build user's review HTML and prepend
+            const reviewsContainer = document.getElementById('reviews-container-{{ $movie->id }}');
+            const userHtml = `
+                <div id="user-review-card-{{ $movie->id }}" class="bg-accent/10 border border-accent/30 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-accent mb-2">${escapeHtml(data.review.username)}</h3>
+                            <p class="text-text-secondary">${escapeHtml(data.review.review || '')}</p>
+                        </div>
+                        <div class="flex items-center gap-2 ml-4">
+                            <div class="star-rating">
+                                ${[1,2,3,4,5].map(i => i <= data.review.rating ? '<i class="bx bxs-star text-yellow-400"></i>' : '<i class="bx bx-star text-gray-600"></i>').join('')}
+                            </div>
+                            <span class="text-accent font-semibold">${data.review.rating}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // remove previous user card if exists (update)
+            const prev = document.getElementById('user-review-card-{{ $movie->id }}');
+            if (prev) prev.remove();
+
+            if (reviewsContainer) {
+                reviewsContainer.insertAdjacentHTML('afterbegin', userHtml);
+            }
+
+            // disable/hide open button
+            const openBtn = document.getElementById('open-review-modal-{{ $movie->id }}');
+            if (openBtn) {
+                openBtn.textContent = 'Already Reviewed';
+                openBtn.classList.remove('btn-accent');
+                openBtn.classList.add('btn-outline', 'btn-disabled');
+                openBtn.disabled = true;
+            }
+
+            // close modal
+            const dlg = document.getElementById('review-modal-{{ $movie->id }}');
+            if (dlg && dlg.close) dlg.close();
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to save review');
+        })
+        .finally(() => { submitBtn.disabled = false; });
+    });
+
+    function escapeHtml(s){ return String(s || '').replace(/[&<>"'\/]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'}[c])); }
 });
 </script>
 @endif

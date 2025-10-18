@@ -1,4 +1,4 @@
-@props(['reviews', 'movie', 'userReview' => null])
+@props(['reviews', 'movie', 'userReview' => null, 'realReviewCount' => 0])
 
 @php
     $user = auth()->user();
@@ -7,7 +7,7 @@
 <div id="user-review-section" class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6">
     <h2 class="text-2xl font-bold mb-6 flex items-center gap-3 text-accent">
         <i class='bx bx-message-dots'></i> User Reviews
-        <span class="text-base text-text-secondary">({{ $reviews->count() }})</span>
+        <span class="text-base text-text-secondary">({{ $realReviewCount }})</span>
     </h2>
 
     @if ($user && $user->role === 'user')
@@ -19,7 +19,7 @@
             >
                 <i class="bx bx-star"></i> Leave a Review
             </button> --}}
-            
+
         @else
             <div class="bg-accent/10 border border-accent/30 rounded-lg p-4 mb-6">
                 <div class="flex justify-between items-start">
@@ -55,7 +55,7 @@
     @endif
 
     {{-- ALL REVIEWS --}}
-    <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+    <div id="reviews-container-{{ $movie->id }}" class="space-y-4 max-h-96 overflow-y-auto pr-2">
         @forelse($reviews as $review)
             <div class="bg-card-bg/50 border border-border-color rounded-lg p-4 hover:bg-card-bg/70 transition-colors">
                 <div class="flex justify-between items-center mb-3">

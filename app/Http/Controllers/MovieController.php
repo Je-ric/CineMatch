@@ -154,29 +154,14 @@ class MovieController extends Controller
             })->values();
         }
 
-        // Reviews - if none, add a placeholder review
-        $reviews = RatingReview::where('movie_id', $id)->with('user')->get();
-        if ($reviews->isEmpty()) {
-            $reviews = collect([(object)[
-                'username' => 'No reviews yet',
-                'rating' => null,
-                'review' => 'Be the first to review this movie.',
-                'user_id' => null,
-            ]]);
-        } else {
-            // Normalize review objects with username and sort user's review to top
-            $reviews = $reviews->map(function ($r) {
-                return (object)[
-                    'username' => $r->user?->name ?? $r->user?->username ?? 'Anonymous',
-                    'rating' => $r->rating,
-                    'review' => $r->review,
-                    'user_id' => $r->user_id,
-                ];
-            })->sortByDesc(function ($review) {
-                // Put current user's review at the top
-                return $review->user_id === auth()->id() ? 1 : 0;
-            })->values();
-        }
+        // load real reviews from DB (no placeholder)
+        $reviews = RatingReview::where('movie_id', $id)->with('user')->orderByDesc('created_at')->get();
+
+        // real count used for badges/headers
+        $realReviewCount = $reviews->count();
+
+        // compute avg separately (null safe)
+        $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
 
         // Related movies by shared genres; fallback placeholder if none
         $related = collect();
@@ -211,6 +196,8 @@ class MovieController extends Controller
         return view('viewMovie', [
             'movie' => $movie,
             'reviews' => $reviews,
+            'realReviewCount' => $realReviewCount,
+            'avgRating' => $avgRating,
             'relatedMovies' => $related,
             'genres' => $genres,
             'directors' => $directors,
@@ -377,7 +364,7 @@ class MovieController extends Controller
         $jsonPathCandidates = [
             public_path('JSON/countries.json'),
             public_path('JSON/country.json'),
-            base_path('JSON/countries.json'), 
+            base_path('JSON/countries.json'),
             base_path('JSON/country.json'),
         ];
 
