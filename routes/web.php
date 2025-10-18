@@ -32,7 +32,7 @@ Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name
 
 
 Route::post('/register', [AuthController::class, 'register'])
-    ->name('register');
+    ->name('auth.register');
 
 Route::post('/login', [AuthController::class, 'login'])
     ->name('login');

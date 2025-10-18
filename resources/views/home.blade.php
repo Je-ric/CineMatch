@@ -42,7 +42,18 @@
             <div class="flex items-end justify-between mb-4">
                 <h3 class="text-2xl font-semibold">Trending now</h3>
             </div>
-            <div id="trendingGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6"></div>
+            <div id="trendingGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                @if (auth()->check() && (auth()->user()->role ?? null) === 'admin')
+                    @foreach($trendingJson ?? [] as $m)
+                        <x-movie-card :movie="(object) $m" :is-admin="true" />
+                    @endforeach
+                @else
+                    @foreach($trendingJson ?? [] as $m)
+                        <x-movie-card :movie="(object) $m" />
+                        {{-- array --}}
+                    @endforeach
+                @endif
+            </div>
         </section>
 
         <!-- All Movies Section -->
@@ -51,7 +62,11 @@
             <div class="flex items-end justify-between mb-4">
                 <h3 class="text-2xl font-semibold">All movies</h3>
             </div>
-            <div id="allGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6"></div>
+            <div id="allGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                @foreach($moviesJson ?? [] as $m)
+                    <x-movie-card :movie="(object) $m" :is-admin="auth()->check() && (auth()->user()->role ?? null) === 'admin'" />
+                @endforeach
+            </div>
             <div id="allEmpty" class="hidden py-16 text-center">
                 <i class='bx bx-search-alt text-5xl text-gray-600 mb-3 block'></i>
                 <p class="text-text-muted">No results found. Try adjusting your search or filters.</p>

@@ -20,7 +20,7 @@
     @include('includes.links')
     @include('layouts.header')
 
-    <main class="container mx-auto mt-4">
+    <main class="container mx-auto">
         @yield('page-content')
     </main>
 

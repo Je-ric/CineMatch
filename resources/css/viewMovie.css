@@ -1,0 +1,49 @@
+.cover_follow {
+    position: relative;
+    /* width: 100%; */
+    height: 420px;
+    background-size: cover;
+    /* background-position: top; */
+    /* background-position: center; */
+    background-position: 50% 25%;
+    overflow: hidden;
+    opacity: 0.6;
+}
+
+.detail_page-infor {
+    position: relative;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    z-index: 5;
+    font-size: 14px;
+    line-height: 1.6em;
+}
+
+.dp-i-c-poster {
+    flex-shrink: 0;
+    width: 240px;
+    margin-right: 2rem;
+}
+
+.dp-i-c-poster .film-poster {
+    width: 100%;
+    padding-bottom: 148%;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    box-shadow: 0 30px 30px rgba(0, 0, 0, 0.5);
+}
+
+.film-poster .film-poster-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dp-i-c-right {
+    flex: 1;
+    min-width: 0;
+}

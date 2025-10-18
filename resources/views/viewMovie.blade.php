@@ -3,6 +3,29 @@
 @section('page-content')
 
     @push('styles')
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'primary-bg': '#0f172a',
+                            'secondary-bg': '#1e293b',
+                            'card-bg': '#334155',
+                            'accent': '#10b981',
+                            'accent-hover': '#059669',
+                            'text-primary': '#f8fafc',
+                            'text-secondary': '#cbd5e1',
+                            'text-muted': '#64748b',
+                            'border-color': '#475569',
+                        },
+                        fontFamily: {
+                            'oswald': ['Oswald', 'sans-serif']
+                        }
+                    }
+                }
+            }
+        </script>
+
         <style>
             .star-rating {
                 display: inline-flex;
@@ -14,26 +37,33 @@
             .star.empty {
                 color: #64748b;
             }
-        </style>
+    </style>
     @endpush
 
     <div class="mx-auto relative z-10">
-        {{-- Movie Background --}}
         @if(!empty($movie->background_url))
             <div class="cover_follow mb-8 absolute top-0 left-0 w-full h-screen -z-10">
                 <div class="absolute inset-0 bg-cover"
                     style="background-image: url('{{ $movie->background_url }}');">
                 </div>
+
                 <div class="absolute inset-0 bg-gradient-to-t from-primary-bg via-primary-bg/80 to-transparent"></div>
             </div>
         @endif
 
-        {{-- Movie Main Info --}}
         <div class="relative z-10 max-w-6xl mx-auto px-4 py-10">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="dp-i-c-poster">
+                {{-- <div class="dp-i-c-poster">
                     <div class="film-poster">
                         <img src="{{ $movie->poster_url }}" alt="{{ $movie->title }} poster" class="film-poster-img rounded-xl shadow-lg">
+                    </div>
+                </div> --}}
+
+                <div class="dp-i-c-poster">
+                    <div class="film-poster">
+                        <img src="{{ $movie->poster_url }}"
+                            alt="{{ $movie->title }} poster"
+                            class="film-poster-img">
                     </div>
                 </div>
 
