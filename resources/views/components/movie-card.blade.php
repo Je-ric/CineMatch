@@ -35,28 +35,26 @@
     <div class="p-4 flex flex-col flex-grow">
         <h5 class="font-semibold text-base mb-1 text-white leading-tight">
             {{ $movie->title }}
-            @if($movie->release_year)
+            @if(!empty($movie->release_year))
                 <small class="text-gray-400 font-normal">({{ $movie->release_year }})</small>
             @endif
         </h5>
 
         <div class="text-gray-400 text-xs flex flex-wrap gap-2 mb-3">
-            @if($movie->country_name ?? null)
-                <span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">
-                    {{ $movie->country_name }}
-                </span>
-            @endif
-            @if($movie->language_name ?? null)
-                <span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">
-                    {{ $movie->language_name }}
-                </span>
-            @endif
+            {{-- No controller logic here — controller should set country_name & language_name --}}
+            <span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">
+                {{ $movie->country_name ?? '' }}
+            </span>
+            <span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">
+                {{ $movie->language_name ?? '' }}
+            </span>
         </div>
 
         @if ($isAdmin)
             <div class="mt-auto pt-2">
                 <div class="flex gap-2">
-                    <a href="{{ route('movies.manage.edit', ['id' => $movie->id]) }}" class="btn btn-xs btn-outline btn-info flex-1">
+                    <a href="{{ route('movies.manage.edit', ['id' => $movie->id]) }}"
+                       class="btn btn-xs btn-outline btn-info flex-1">
                         <i class='bx bx-edit'></i> Edit
                     </a>
 

@@ -11,13 +11,20 @@ class Language extends Model
 
     protected $fillable = ['name'];
 
+    
     public function movies()
     {
-        return $this->belongsToMany(
-            Movie::class,
-            'movie_languages',
-            'language_id',
-            'movie_id'
-        );
+        return $this->hasMany(Movie::class);
     }
+
+    // public function movies()
+    // {
+    //     return $this->belongsToMany(
+    //         Movie::class,
+    //         'movie_languages',
+    //         'language_id',
+    //         'movie_id'
+    //     );
+    // }
+
 }

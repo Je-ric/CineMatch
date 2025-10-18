@@ -17,6 +17,8 @@ class Movie extends Model
         'poster_url',
         'background_url',
         'trailer_url',
+        'country_id',  
+        'language_id', 
     ];
 
     public function genres()
@@ -29,25 +31,33 @@ class Movie extends Model
         );
     }
 
-    public function languages()
-    {
-        return $this->belongsToMany(
-            Language::class,
-            'movie_languages',
-            'movie_id',
-            'language_id'
-        );
+    public function country() {
+        return $this->belongsTo(Country::class);
     }
 
-    public function countries()
-    {
-        return $this->belongsToMany(
-            Country::class,
-            'movie_countries',
-            'movie_id',
-            'country_id'
-        );
+    public function language() {
+        return $this->belongsTo(Language::class);
     }
+
+    // public function languages()
+    // {
+    //     return $this->belongsToMany(
+    //         Language::class,
+    //         'movie_languages',
+    //         'movie_id',
+    //         'language_id'
+    //     );
+    // }
+
+    // public function countries()
+    // {
+    //     return $this->belongsToMany(
+    //         Country::class,
+    //         'movie_countries',
+    //         'movie_id',
+    //         'country_id'
+    //     );
+    // }
 
     public function cast()
     {

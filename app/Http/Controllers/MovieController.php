@@ -15,10 +15,9 @@ class MovieController extends Controller
 {
     public function index()
     {
-        // eager load relations so views/controllers don't need raw queries
-        $movies = Movie::with(['genres', 'countries', 'languages', 'ratings'])->get();
+        $movies = Movie::with(['genres', 'ratings', 'country', 'language'])->get();
 
-        // If no movies, provide fallback placeholders so the UI has something to render
+        // Fallback if no movies
         if ($movies->isEmpty()) {
             $movies = collect([
                 (object)[
@@ -31,90 +30,55 @@ class MovieController extends Controller
                     'language_name' => 'Unknown',
                     'genre_ids' => '',
                 ],
-                (object)[
-                    'id' => 1,
-                    'title' => 'Another Sample Movie',
-                    'release_year' => date('Y'),
-                    'poster_url' => asset('images/placeholders/sample2.jpg'),
-                    'avg_rating' => null,
-                    'country_name' => 'Unknown',
-                    'language_name' => 'Unknown',
-                    'genre_ids' => '',
-                ],
             ]);
         }
 
-        // Normalize to simple arrays for blade JS consumption
+        // Transform for frontend
         $moviesJson = $movies->map(function ($m) {
-            // if $m is an Eloquent model it will have relationships; placeholders are stdClass above
-            $avg = null;
-            if (isset($m->ratings) && $m->ratings instanceof Collection) {
-                $avg = $m->ratings->avg('rating');
-                $avg = $avg !== null ? round($avg, 1) : null;
-            } elseif (isset($m->avg_rating)) {
-                $avg = $m->avg_rating;
-            }
+            $avg = isset($m->ratings) && $m->ratings instanceof \Illuminate\Support\Collection
+                ? round($m->ratings->avg('rating') ?? 0, 1)
+                : ($m->avg_rating ?? null);
 
             return [
                 'id' => $m->id ?? 0,
                 'title' => $m->title ?? 'Untitled',
                 'release_year' => $m->release_year ?? null,
-                // Accessor on Movie model will turn relative urls into full asset() urls
-                'poster_url' => $m->poster_url ?? ($m->poster ?? asset('images/placeholders/sample1.jpg')),
-                'avg_rating' => $avg,
-                'country_name' => isset($m->countries) && $m->countries->first() ? $m->countries->first()->name : ($m->country_name ?? null),
-                'language_name' => isset($m->languages) && $m->languages->first() ? $m->languages->first()->name : ($m->language_name ?? null),
-                'genre_ids' => isset($m->genres) ? $m->genres->pluck('id')->implode(',') : ($m->genre_ids ?? ''),
+                'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
+                'avg_rating' => $avg ?: null,
+                'country_name' => $m->country->name ?? 'Unknown',
+                'language_name' => $m->language->name ?? 'Unknown',
+                'genre_ids' => $m->genres->pluck('id')->implode(',') ?? '',
             ];
         })->toArray();
 
-        // Trending - choose top-rated then fallback to recent; if empty provide placeholder
-        $trendingCollection = Movie::with(['ratings'])->get()->map(function ($m) {
-            $avg = $m->ratings->avg('rating');
-            $m->avg_rating = $avg !== null ? round($avg, 1) : null;
+        // Trending movies
+        $trendingCollection = Movie::with(['ratings', 'country', 'language', 'genres'])->get()->map(function ($m) {
+            $m->avg_rating = round($m->ratings->avg('rating') ?? 0, 1);
             return $m;
         });
 
         $trending = $trendingCollection->sortByDesc('avg_rating')->take(6);
 
-        if ($trending->isEmpty()) {
-            $trending = collect([
-                [
-                    'id' => 0,
-                    'title' => 'No trending movies yet',
-                    'poster_url' => asset('images/placeholders/no_trending.jpg'),
-                    'release_year' => null,
-                    'avg_rating' => null,
-                    'country_name' => null,
-                    'language_name' => null,
-                    'genre_ids' => '',
-                ],
-            ]);
-        } else {
-            $trending = $trending->map(function ($m) {
-                return [
-                    'id' => $m->id,
-                    'title' => $m->title,
-                    'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
-                    'release_year' => $m->release_year,
-                    'avg_rating' => $m->avg_rating,
-                    'country_name' => $m->countries->first()?->name ?? null,
-                    'language_name' => $m->languages->first()?->name ?? null,
-                    'genre_ids' => $m->genres->pluck('id')->implode(','),
-                ];
-            })->toArray();
-        }
-
-        $trendingJson = is_array($trending) ? $trending : $trending->toArray();
+        $trendingJson = $trending->map(function ($m) {
+            return [
+                'id' => $m->id,
+                'title' => $m->title,
+                'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
+                'release_year' => $m->release_year,
+                'avg_rating' => $m->avg_rating ?: null,
+                'country_name' => $m->country->name ?? 'Unknown',
+                'language_name' => $m->language->name ?? 'Unknown',
+                'genre_ids' => $m->genres->pluck('id')->implode(','),
+            ];
+        })->values()->toArray();
 
         return view('home', compact('moviesJson', 'trendingJson'));
     }
 
     public function show($id)
     {
-        $movie = Movie::with(['genres', 'countries', 'languages', 'cast', 'ratings'])->find($id);
+        $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($id);
 
-        // If movie not found, provide a friendly placeholder object
         if (!$movie) {
             $movie = (object)[
                 'id' => 0,
@@ -125,63 +89,15 @@ class MovieController extends Controller
                 'background_url' => asset('images/placeholders/background.jpg'),
                 'trailer_url' => null,
                 'genres' => collect([]),
-                'countries' => collect([]),
-                'languages' => collect([]),
+                'country' => (object)['name' => 'Unknown'],
+                'language' => (object)['name' => 'Unknown'],
                 'cast' => collect([]),
             ];
 
             $genres = [];
             $directors = collect([]);
             $actors = collect([]);
-        } else {
-            // ensure country / language convenient attributes for the view
-            $movie->country_name = $movie->countries->first()?->name ?? null;
-            $movie->language_name = $movie->languages->first()?->name ?? null;
-
-            // Genres as simple array of names (view expects $genres)
-            $genres = $movie->genres->pluck('name')->toArray();
-
-            // Split cast by pivot.role (case-insensitive)
-            $directors = $movie->cast->filter(function ($person) {
-                $role = $person->pivot->role ?? '';
-                return strcasecmp(trim((string)$role), 'director') === 0;
-            })->values();
-
-            $actors = $movie->cast->filter(function ($person) {
-                $role = $person->pivot->role ?? '';
-                return strcasecmp(trim((string)$role), 'cast') === 0
-                    || strcasecmp(trim((string)$role), 'actor') === 0;
-            })->values();
-        }
-
-        // load real reviews from DB (no placeholder)
-        $reviews = RatingReview::where('movie_id', $id)->with('user')->orderByDesc('created_at')->get();
-
-        // real count used for badges/headers
-        $realReviewCount = $reviews->count();
-
-        // compute avg separately (null safe)
-        $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
-
-        // Related movies by shared genres; fallback placeholder if none
-        $related = collect();
-        if (isset($movie->genres) && $movie->genres->isNotEmpty()) {
-            $genreIds = $movie->genres->pluck('id')->toArray();
-            $related = Movie::with(['countries', 'languages', 'ratings'])
-                ->whereHas('genres', function ($q) use ($genreIds) {
-                    $q->whereIn('genres.id', $genreIds);
-                })->where('id', '!=', $movie->id)->take(6)->get();
-
-            // Add convenient attributes for the view
-            $related = $related->map(function ($m) {
-                $m->country_name = $m->countries->first()?->name ?? null;
-                $m->language_name = $m->languages->first()?->name ?? null;
-                $m->avg_rating = $m->ratings->avg('rating');
-                return $m;
-            });
-        }
-
-        if ($related->isEmpty()) {
+            $reviews = collect();
             $related = collect([(object)[
                 'id' => 0,
                 'title' => 'No related movies found',
@@ -191,7 +107,45 @@ class MovieController extends Controller
                 'country_name' => null,
                 'language_name' => null,
             ]]);
+
+            return view('viewMovie', compact('movie', 'reviews', 'related', 'genres', 'directors', 'actors'))
+                ->with(['realReviewCount' => 0, 'avgRating' => null]);
         }
+
+        // Derived attributes
+        $movie->country_name = $movie->country->name ?? 'Unknown';
+        $movie->language_name = $movie->language->name ?? 'Unknown';
+        $genres = $movie->genres->pluck('name')->toArray();
+
+        // Split cast
+        $directors = $movie->cast->filter(
+            fn($p) =>
+            strcasecmp($p->pivot->role ?? '', 'Director') === 0
+        )->values();
+
+        $actors = $movie->cast->filter(
+            fn($p) =>
+            strcasecmp($p->pivot->role ?? '', 'Cast') === 0
+        )->values();
+
+        // Reviews
+        $reviews = $movie->ratings()->with('user')->latest()->get();
+        $realReviewCount = $reviews->count();
+        $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
+
+        // Related movies (same genre)
+        $related = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->get()
+            ->reject(fn($m) => $m->id === $movie->id)
+            ->filter(fn($m) => $m->genres->pluck('id')->intersect($movie->genres->pluck('id'))->isNotEmpty())
+            ->take(6)
+            ->map(function ($m) {
+                $m->country_name = $m->country->name ?? 'Unknown';
+                $m->language_name = $m->language->name ?? 'Unknown';
+                $m->avg_rating = round($m->ratings->avg('rating') ?? 0, 1);
+                return $m;
+            })
+            ->values();
 
         return view('viewMovie', [
             'movie' => $movie,
@@ -205,7 +159,9 @@ class MovieController extends Controller
         ]);
     }
 
-    // Create a movie with public uploads and JSON-validated country/language
+    // ====================================================================================
+    // 💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡
+    // ====================================================================================
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -221,40 +177,68 @@ class MovieController extends Controller
             'languageName' => 'required|string',
         ]);
 
-        $posterRelative = $this->storeImageToPublic($request->file('poster_file'), 'uploads/posters', $validated['title'], $validated['release_year'] ?? null);
+        $posterRelative = $this->storeImageToPublic(
+            $request->file('poster_file'),
+            'uploads/posters',
+            $validated['title'],
+            $validated['release_year'] ?? null
+        );
+
         $bgRelative = null;
         if ($request->hasFile('background_file')) {
-            $bgRelative = $this->storeImageToPublic($request->file('background_file'), 'uploads/backgrounds', $validated['title'], $validated['release_year'] ?? null);
-        }
-
-        $movie = Movie::create([
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'release_year' => $validated['release_year'] ?? null,
-            'poster_url' => $posterRelative,
-            'background_url' => $bgRelative,
-            'trailer_url' => $validated['trailer_url'] ?? null,
-        ]);
-
-        if (!empty($validated['genres'])) {
-            $movie->genres()->sync($validated['genres']);
+            $bgRelative = $this->storeImageToPublic(
+                $request->file('background_file'),
+                'uploads/backgrounds',
+                $validated['title'],
+                $validated['release_year'] ?? null
+            );
         }
 
         $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
         $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
-        if ($countryId) {
-            $movie->countries()->sync([$countryId]);
-        }
-        if ($languageId) {
-            $movie->languages()->sync([$languageId]);
-        }
 
-        // instead of redirecting to home, send user to the edit/manage page for the newly created movie
-        return redirect()->route('movies.manage.edit', ['id' => $movie->id])
-                         ->with('success', 'Movie created. You can now add people and media.');
+        // Defensive transaction + explicit save
+        \DB::beginTransaction();
+        try {
+            $movie = new Movie([
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'release_year' => $validated['release_year'] ?? null,
+                'trailer_url' => $validated['trailer_url'] ?? null,
+                'poster_url' => $posterRelative,
+                'background_url' => $bgRelative,
+                'country_id' => $countryId,
+                'language_id' => $languageId,
+            ]);
+
+            if (! $movie->save()) {
+                \DB::rollBack();
+                \Log::error('Movie::save returned false', ['input' => $validated]);
+                return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie.']);
+            }
+
+            // ensure id present before touching pivots
+            if (empty($movie->id)) {
+                \DB::rollBack();
+                \Log::error('Movie created but id missing', ['movie' => $movie->toArray()]);
+                return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie (no id).']);
+            }
+
+            if (!empty($validated['genres']) && is_array($validated['genres'])) {
+                $movie->genres()->sync($validated['genres']);
+            }
+
+            \DB::commit();
+
+            return redirect()->route('movies.manage.edit', ['id' => $movie->id])
+                ->with('success', 'Movie created. You can now add people and media.');
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            \Log::error('Failed creating movie', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'input' => $validated]);
+            return redirect()->back()->withInput()->withErrors(['general' => 'Failed saving movie. Check logs.']);
+        }
     }
 
-    // Update a movie, optionally replacing images and syncing relations
     public function update(Request $request, $id)
     {
         $movie = Movie::findOrFail($id);
@@ -266,47 +250,58 @@ class MovieController extends Controller
             'trailer_url' => 'nullable|string|max:2048',
             'poster_file' => 'nullable|image|max:5120',
             'background_file' => 'nullable|image|max:8192',
-            'genres' => 'array',
-            'genres.*' => 'integer|exists:genres,id',
+            'genres' => 'nullable|array',
             'countryName' => 'required|string',
             'languageName' => 'required|string',
         ]);
 
+        $posterRelative = $movie->poster_url;
         if ($request->hasFile('poster_file')) {
-            $newPoster = $this->storeImageToPublic($request->file('poster_file'), 'uploads/posters', $validated['title'], $validated['release_year'] ?? null);
-            $this->deletePublicFile($movie->getRawOriginal('poster_url'));
-            $movie->poster_url = $newPoster;
+            $posterRelative = $this->storeImageToPublic(
+                $request->file('poster_file'),
+                'uploads/posters',
+                $validated['title'],
+                $validated['release_year'] ?? null
+            );
         }
 
+        $bgRelative = $movie->background_url;
         if ($request->hasFile('background_file')) {
-            $newBg = $this->storeImageToPublic($request->file('background_file'), 'uploads/backgrounds', $validated['title'], $validated['release_year'] ?? null);
-            $this->deletePublicFile($movie->getRawOriginal('background_url'));
-            $movie->background_url = $newBg;
-        }
-
-        $movie->title = $validated['title'];
-        $movie->description = $validated['description'] ?? null;
-        $movie->release_year = $validated['release_year'] ?? null;
-        $movie->trailer_url = $validated['trailer_url'] ?? null;
-        $movie->save();
-
-        if (isset($validated['genres'])) {
-            $movie->genres()->sync($validated['genres']);
+            $bgRelative = $this->storeImageToPublic(
+                $request->file('background_file'),
+                'uploads/backgrounds',
+                $validated['title'],
+                $validated['release_year'] ?? null
+            );
         }
 
         $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
         $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
-        if ($countryId) {
-            $movie->countries()->sync([$countryId]);
-        }
-        if ($languageId) {
-            $movie->languages()->sync([$languageId]);
+
+        $movie->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'release_year' => $validated['release_year'] ?? null,
+            'trailer_url' => $validated['trailer_url'] ?? null,
+            'poster_url' => $posterRelative ?? $movie->poster_url,
+            'background_url' => $bgRelative ?? $movie->background_url,
+            'country_id' => $countryId,
+            'language_id' => $languageId,
+        ]);
+
+        // ✅ Only now sync genres
+        if (!empty($validated['genres'])) {
+            $movie->genres()->sync($validated['genres']);
+        } else {
+            $movie->genres()->detach();
         }
 
-        // keep user on the manage/edit page so they can add persons immediately
-        return redirect()->route('movies.manage.edit', ['id' => $id])
-                            ->with('success', 'Movie updated.');
+        return redirect()->route('movies.manage.edit', ['id' => $movie->id])
+            ->with('success', 'Movie details updated successfully.');
     }
+
+
+
 
     // Delete a movie and clean up files and pivots
     public function destroy($id)
@@ -322,45 +317,63 @@ class MovieController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // --- Helpers ---
-    private function storeImageToPublic($file, $subdir, $title, $year)
-    {
-        // normalize subdir
-        $subdir = trim($subdir, '/ ');
-        $safeTitle = Str::slug($title ?: 'movie');
-        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $yearPart = $year ? (int)$year : date('Y');
-        // slug_year_timestamp_random.ext
-        $name = sprintf('%s_%s_%s_%s.%s', $safeTitle, $yearPart, time(), Str::random(6), $ext);
+    // ====================================================================================
+    // 💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡
+    // ====================================================================================
 
-        $targetDir = public_path($subdir);
-        if (!is_dir($targetDir)) {
-            @mkdir($targetDir, 0775, true);
+    private function storeImageToPublic($file, $folder, $movieTitle, $releaseYear)
+    {
+        $folder = trim($folder, '/ ');
+
+        // Rename: title_year_timestamp_random.ext
+        $safeTitle = Str::slug($movieTitle ?: 'movie');
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $year = $releaseYear ? (int)$releaseYear : date('Y');
+        $filename = sprintf(
+            '%s_%s_%s_%s.%s',
+            $safeTitle,
+            $year,
+            time(),
+            Str::random(6),
+            $extension
+        );
+
+        $destinationPath = public_path($folder);
+        if (!is_dir($destinationPath)) {
+            @mkdir($destinationPath, 0775, true);
         }
 
-        $file->move($targetDir, $name);
+        // Relative
+        // Move uploaded file into /public/uploads/posters/filename.jpg
+        $file->move($destinationPath, $filename);
 
-        // return relative path WITHOUT leading slash so asset(...) works consistently
-        return trim($subdir . '/' . $name, '/');
+        return $folder . '/' . $filename;
     }
 
     private function deletePublicFile($relativePath)
     {
-        if (empty($relativePath)) return;
-        // accept paths with or without leading slash
-        $relativePath = ltrim($relativePath, '/ ');
-        $full = public_path($relativePath);
-        if (is_file($full)) {
-            @unlink($full);
+        if (empty($relativePath)) {
+            return;
+        }
+
+        // Normalize relative path and delete
+        $cleanPath = ltrim($relativePath, '/ ');
+        $absolutePath = public_path($cleanPath);
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
         }
     }
+
+    // ====================================================================================
+    // 💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡
+    // ====================================================================================
 
     private function findOrCreateCountryFromJson(string $countryName): ?int
     {
         $countryName = trim($countryName);
         if ($countryName === '') return null;
 
-        // Look in public/JSON (matches manageMovie fetch('JSON/countries.json'))
         $jsonPathCandidates = [
             public_path('JSON/countries.json'),
             public_path('JSON/country.json'),
@@ -368,20 +381,11 @@ class MovieController extends Controller
             base_path('JSON/country.json'),
         ];
 
-        $allowed = [];
+        // If JSON exists, we could use it for suggestions only 
         foreach ($jsonPathCandidates as $jsonPath) {
             if (is_file($jsonPath)) {
-                $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
-                foreach ($arr as $row) {
-                    $allowed[] = $row['country'] ?? $row['name'] ?? null;
-                }
                 break;
             }
-        }
-
-        $allowed = array_filter(array_map('strval', $allowed));
-        if (!empty($allowed) && !in_array($countryName, $allowed, true)) {
-            return null;
         }
 
         $model = Country::firstOrCreate(['name' => $countryName]);
@@ -393,7 +397,6 @@ class MovieController extends Controller
         $languageName = trim($languageName);
         if ($languageName === '') return null;
 
-        // Look in public/JSON (matches manageMovie fetch('JSON/language.json'))
         $jsonPathCandidates = [
             public_path('JSON/language.json'),
             public_path('JSON/languages.json'),
@@ -401,29 +404,21 @@ class MovieController extends Controller
             base_path('JSON/languages.json'),
         ];
 
-        $allowed = [];
         foreach ($jsonPathCandidates as $jsonPath) {
             if (is_file($jsonPath)) {
-                $arr = json_decode(file_get_contents($jsonPath), true) ?: [];
-                foreach ($arr as $row) {
-                    $allowed[] = $row['name'] ?? $row['language'] ?? null;
-                }
                 break;
             }
-        }
-
-        $allowed = array_filter(array_map('strval', $allowed));
-        if (!empty($allowed) && !in_array($languageName, $allowed, true)) {
-            return null;
         }
 
         $model = Language::firstOrCreate(['name' => $languageName]);
         return $model->id;
     }
 
-    /**
-     * Show create form for a movie (was previously in routes closure).
-     */
+
+    // ====================================================================================
+    // 💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡💡
+    // ====================================================================================
+
     public function create()
     {
         $allGenres = Genre::orderBy('name')->get();
@@ -434,12 +429,9 @@ class MovieController extends Controller
         ]);
     }
 
-    /**
-     * Show edit form for a movie (was previously in routes closure).
-     */
     public function edit($id)
     {
-        $movie = Movie::with(['genres', 'countries', 'languages'])->findOrFail($id);
+        $movie = Movie::with(['genres'])->findOrFail($id);
         $allGenres = Genre::orderBy('name')->get();
         return view('manageMovie', [
             'editing' => true,

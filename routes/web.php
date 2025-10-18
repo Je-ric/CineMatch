@@ -55,7 +55,7 @@ Route::get('/movies/manage/{id}', [MovieController::class, 'edit'])->name('movie
 
 // Movies CRUD
 Route::post('/movies', [MovieController::class, 'store'])->name('movies.store');
-Route::post('/movies/{id}', [MovieController::class, 'update'])->name('movies.update');
+Route::put('/movies/{id}', [MovieController::class, 'update'])->name('movies.update');
 Route::delete('/movies/{id}', [MovieController::class, 'destroy'])->name('movies.destroy');
 
 // People endpoints (AJAX)
@@ -70,4 +70,3 @@ Route::get('/profile', function () {
 
 // Reviews and favorites (AJAX)
 Route::post('/reviews', [RateReviewController::class, 'store'])->name('reviews.store');
-Route::post('/favorites/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');

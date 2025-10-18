@@ -51,6 +51,7 @@ php artisan make:Controller RecommendController
 php artisan make:livewire favorite-button
 composer require livewire/livewire
 php artisan make:livewire movie-reviews
+php artisan make:migration update_movies_add_country_and_language_columns
 
 
 

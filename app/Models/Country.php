@@ -13,11 +13,16 @@ class Country extends Model
 
     public function movies()
     {
-        return $this->belongsToMany(
-            Movie::class,
-            'movie_countries',
-            'country_id',
-            'movie_id'
-        );
+        return $this->hasMany(Movie::class);
     }
+
+    // public function movies()
+    // {
+    //     return $this->belongsToMany(
+    //         Movie::class,
+    //         'movie_countries',
+    //         'country_id',
+    //         'movie_id'
+    //     );
+    // }
 }
