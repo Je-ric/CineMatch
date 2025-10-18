@@ -161,25 +161,39 @@ class MovieController extends Controller
                 'username' => 'No reviews yet',
                 'rating' => null,
                 'review' => 'Be the first to review this movie.',
+                'user_id' => null,
             ]]);
         } else {
-            // Normalize review objects with username
+            // Normalize review objects with username and sort user's review to top
             $reviews = $reviews->map(function ($r) {
                 return (object)[
                     'username' => $r->user?->name ?? $r->user?->username ?? 'Anonymous',
                     'rating' => $r->rating,
                     'review' => $r->review,
+                    'user_id' => $r->user_id,
                 ];
-            });
+            })->sortByDesc(function ($review) {
+                // Put current user's review at the top
+                return $review->user_id === auth()->id() ? 1 : 0;
+            })->values();
         }
 
         // Related movies by shared genres; fallback placeholder if none
         $related = collect();
         if (isset($movie->genres) && $movie->genres->isNotEmpty()) {
             $genreIds = $movie->genres->pluck('id')->toArray();
-            $related = Movie::whereHas('genres', function ($q) use ($genreIds) {
-                $q->whereIn('genres.id', $genreIds);
-            })->where('id', '!=', $movie->id)->take(6)->get();
+            $related = Movie::with(['countries', 'languages', 'ratings'])
+                ->whereHas('genres', function ($q) use ($genreIds) {
+                    $q->whereIn('genres.id', $genreIds);
+                })->where('id', '!=', $movie->id)->take(6)->get();
+
+            // Add convenient attributes for the view
+            $related = $related->map(function ($m) {
+                $m->country_name = $m->countries->first()?->name ?? null;
+                $m->language_name = $m->languages->first()?->name ?? null;
+                $m->avg_rating = $m->ratings->avg('rating');
+                return $m;
+            });
         }
 
         if ($related->isEmpty()) {
@@ -189,6 +203,8 @@ class MovieController extends Controller
                 'poster_url' => asset('images/placeholders/no_related.jpg'),
                 'release_year' => null,
                 'avg_rating' => null,
+                'country_name' => null,
+                'language_name' => null,
             ]]);
         }
 

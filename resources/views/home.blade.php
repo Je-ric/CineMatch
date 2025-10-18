@@ -7,6 +7,13 @@
                 <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
                 <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
             </div>
+            @if(auth()->check() && (auth()->user()->role ?? null) === 'admin')
+                <div class="mb-4 md:mb-0">
+                    <a href="{{ route('movies.manage.create') }}" class="btn btn-accent">
+                        <i class="bx bx-plus"></i> Add New Movie
+                    </a>
+                </div>
+            @endif
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <label
                     class="flex items-center w-full md:w-96 bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
@@ -53,6 +60,9 @@
                         {{-- array --}}
                     @endforeach
                 @endif
+                {{-- @foreach($trendingJson ?? [] as $m)
+                    <x-movie-card :movie="(object) $m" :is-admin="auth()->check() && (auth()->user()->role ?? null) === 'admin'" />
+                @endforeach --}}
             </div>
         </section>
 
@@ -76,195 +86,83 @@
 
     @push('scripts')
         <script>
-            (function($) {
-                const state = {
-                    allMovies: @json($moviesJson),
-                    trending: @json($trendingJson),
-                };
+            // Simple search and filter functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.getElementById('search');
+                const sortSelect = document.getElementById('sortSelect');
+                const genreFilter = document.getElementById('genreFilter');
+                const yearFilter = document.getElementById('yearFilter');
+                const countryFilter = document.getElementById('countryFilter');
 
+                const allMovies = @json($moviesJson);
+                const trendingMovies = @json($trendingJson);
 
-                const isAdmin = {{ auth()->check() && (auth()->user()->role ?? null) === 'admin' ? 'true' : 'false' }};
+                function filterMovies() {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const selectedYear = yearFilter.value;
+                    const selectedCountry = countryFilter.value;
+                    const selectedGenre = genreFilter.value;
+                    const sortBy = sortSelect.value;
 
-                function buildCard(m, showActions = false) {
-                    let poster = m.poster_url || '';
-                    if (poster && !/^https?:\/\//.test(poster)) {
-                        poster = `{{ asset('') }}/${poster}`;
-                    }
-                    if (!poster) {
-                        poster = 'https://placehold.co/300x450?text=No+Poster';
-                    }
+                    let filtered = allMovies.filter(movie => {
+                        const matchesSearch = !searchTerm || movie.title.toLowerCase().includes(searchTerm);
+                        const matchesYear = !selectedYear || movie.release_year == selectedYear;
+                        const matchesCountry = !selectedCountry || movie.country_name === selectedCountry;
+                        const matchesGenre = !selectedGenre || (movie.genre_ids && movie.genre_ids.split(',').includes(selectedGenre));
 
-                    const rating = (m.avg_rating != null) ? Number(m.avg_rating).toFixed(1) : 'N/A';
-                    const year = m.release_year ? `(${m.release_year})` : '';
-                    const country = m.country_name ?
-                        `<span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">${escapeHtml(m.country_name)}</span>` :
-                        '';
-                    const language = m.language_name ?
-                        `<span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">${escapeHtml(m.language_name)}</span>` :
-                        '';
-                    const ratingBadge =
-                        `<div class="absolute top-2 right-2"><span class="bg-green-600/90 text-white font-semibold text-xs px-2 py-1 rounded-md flex items-center gap-1"><i class='bx bxs-star text-yellow-300'></i>${rating}</span></div>`;
-
-                    const editUrl = "{{ route('movies.manage.edit', ['id' => ':id']) }}".replace(':id', m.id);
-                    const deleteUrl = "{{ route('movies.destroy', ['id' => ':id']) }}".replace(':id', m.id);
-
-                    const adminControls = showActions ? `
-                        <div class="mt-auto pt-2">
-                            <div class="flex gap-2">
-                                <a href="${editUrl}" class="btn btn-xs btn-outline btn-info flex-1">
-                                    <i class='bx bx-edit'></i> Edit
-                                </a>
-                                <button type="button" class="btn btn-xs btn-outline btn-error flex-1 btn-delete-movie" data-id="${m.id}" data-url="${deleteUrl}">
-                                    <i class='bx bx-trash'></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    ` : '';
-
-                    return `
-        <div class="group rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 hover:border-green-500/70 transition transform hover:-translate-y-2 hover:shadow-xl hover:shadow-green-500/20 flex flex-col">
-            <div class="relative">
-                <a href="{{ url('viewMovie') }}/${m.id}">
-                    <img src="${escapeHtml(poster)}" alt="${escapeHtml(m.title)}"
-                        class="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105">
-                </a>
-                ${ratingBadge}
-            </div>
-            <div class="p-4 flex flex-col flex-grow">
-                <h5 class="font-semibold text-base mb-1 text-white leading-tight">
-                    ${escapeHtml(m.title)} <small class="text-gray-400 font-normal">${year}</small>
-                </h5>
-                <div class="text-gray-400 text-xs flex flex-wrap gap-2 mb-3">
-                    ${country}${language}
-                </div>
-                ${adminControls}
-            </div>
-        </div>`;
-                }
-
-
-                function renderGrid($container, list, showActions = false) {
-                    $container.html(list.map(m => buildCard(m, showActions)).join(''));
-                }
-
-                function escapeHtml(str) {
-                    return String(str || '')
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#039;');
-                }
-
-                function applySortAndFilter(list) {
-                    const q = $('#search').val().trim().toLowerCase();
-                    const year = $('#yearFilter').val();
-                    const country = $('#countryFilter').val();
-                    const genreId = $('#genreFilter').val();
-                    const sort = $('#sortSelect').val();
-
-                    let res = list;
-
-                    if (q) res = res.filter(m => (m.title || '').toLowerCase().includes(q));
-                    if (year) res = res.filter(m => String(m.release_year) === year);
-                    if (country) res = res.filter(m => m.country_name === country);
-                    if (genreId) {
-                        res = res.filter(m => {
-                            if (!m.genre_ids) return false;
-                            const genreArray = m.genre_ids.split(',');
-                            const genreNumbers = genreArray.map(Number);
-                            return genreNumbers.includes(Number(genreId));
-                        });
-                    }
-
-                    if (sort === 'year_desc') res.sort((a, b) => (b.release_year || 0) - (a.release_year || 0));
-                    else if (sort === 'year_asc') res.sort((a, b) => (a.release_year || 0) - (b.release_year || 0));
-                    else if (sort === 'title_asc') res.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-                    else if (sort === 'title_desc') res.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
-
-                    return res;
-                }
-
-                function populateFilters() {
-                    const years = [...new Set(state.allMovies.map(m => m.release_year).filter(Boolean))].sort((a, b) => b -
-                        a);
-                    const countries = [...new Set(state.allMovies.map(m => m.country_name).filter(Boolean))].sort();
-
-                    const $yf = $('#yearFilter').empty().append('<option value="">All Years</option>');
-                    const $cf = $('#countryFilter').empty().append('<option value="">All Countries</option>');
-
-                    years.forEach(y => $yf.append(`<option value="${y}">${y}</option>`));
-                    countries.forEach(c => $cf.append(`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
-                }
-
-                function hasActiveFilters() {
-                    return $('#search').val().trim() ||
-                        $('#yearFilter').val() ||
-                        $('#countryFilter').val() ||
-                        $('#genreFilter').val() ||
-                        $('#sortSelect').val() !== 'year_desc';
-                }
-
-                function updateTrendingVisibility() {
-                    $('#trendingSection').toggleClass('hidden', !!hasActiveFilters());
-                }
-
-                function renderAllGrid() {
-                    const filtered = applySortAndFilter(state.allMovies);
-                    renderGrid($('#allGrid'), filtered, isAdmin);
-                    $('#allEmpty').toggleClass('hidden', filtered.length > 0);
-                }
-
-                function initialLoad() {
-                    populateFilters();
-                    renderAllGrid();
-                    updateTrendingVisibility();
-
-                    renderGrid($('#trendingGrid'), state.trending, false);
-                }
-
-
-                function wireEvents() {
-                    $('#search').on('input', () => {
-                        renderAllGrid();
-                        updateTrendingVisibility();
+                        return matchesSearch && matchesYear && matchesCountry && matchesGenre;
                     });
 
-                    $('#sortSelect, #genreFilter, #yearFilter, #countryFilter').on('change', () => {
-                        renderAllGrid();
-                        updateTrendingVisibility();
-                    });
+                    // Sort movies
+                    if (sortBy === 'year_desc') {
+                        filtered.sort((a, b) => (b.release_year || 0) - (a.release_year || 0));
+                    } else if (sortBy === 'year_asc') {
+                        filtered.sort((a, b) => (a.release_year || 0) - (b.release_year || 0));
+                    } else if (sortBy === 'title_asc') {
+                        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                    } else if (sortBy === 'title_desc') {
+                        filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+                    }
 
-                    $(document).on('click', '.btn-delete-movie', function(e) {
-                        e.preventDefault();
-                        const id = $(this).data('id');
-                        if (!confirm('Delete this movie?')) return;
-                        $.ajax({
-                            url: `{{ url('/movies') }}/${id}`,
-                            method: 'POST',
-                            data: {
-                                _method: 'DELETE',
-                                _token: `{{ csrf_token() }}`
-                            },
-                            success: function() {
-                                // Remove from state and re-render
-                                state.allMovies = state.allMovies.filter(m => m.id !== id);
-                                renderAllGrid();
-                            },
-                            error: function(xhr) {
-                                alert('Failed to delete movie');
-                                console.error(xhr.responseText);
-                            }
-                        });
-                    });
+                    // Show/hide trending section
+                    const hasFilters = searchTerm || selectedYear || selectedCountry || selectedGenre || sortBy !== 'year_desc';
+                    document.getElementById('trendingSection').style.display = hasFilters ? 'none' : 'block';
+
+                    // Show empty state if no results
+                    const emptyState = document.getElementById('allEmpty');
+                    emptyState.style.display = filtered.length === 0 ? 'block' : 'none';
+
+                    console.log(`Filtered ${filtered.length} movies`);
                 }
 
-                $(initialLoad);
-                $(wireEvents);
+                // Add event listeners
+                [searchInput, sortSelect, genreFilter, yearFilter, countryFilter].forEach(element => {
+                    element.addEventListener('input', filterMovies);
+                    element.addEventListener('change', filterMovies);
+                });
 
-            })(jQuery);
+                // Populate filters
+                const years = [...new Set(allMovies.map(m => m.release_year).filter(Boolean))].sort((a, b) => b - a);
+                const countries = [...new Set(allMovies.map(m => m.country_name).filter(Boolean))].sort();
+
+                years.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearFilter.appendChild(option);
+                });
+
+                countries.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = country;
+                    countryFilter.appendChild(option);
+                });
+
+                console.log('Home page filters initialized');
+            });
         </script>
-    @endpush
+        @endpush
 @endsection
 
 {{-- hindi pa ayos yung sa admin side HAHAAHAHAAAA --}}

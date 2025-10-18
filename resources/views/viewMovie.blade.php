@@ -3,29 +3,6 @@
 @section('page-content')
 
     @push('styles')
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            'primary-bg': '#0f172a',
-                            'secondary-bg': '#1e293b',
-                            'card-bg': '#334155',
-                            'accent': '#10b981',
-                            'accent-hover': '#059669',
-                            'text-primary': '#f8fafc',
-                            'text-secondary': '#cbd5e1',
-                            'text-muted': '#64748b',
-                            'border-color': '#475569',
-                        },
-                        fontFamily: {
-                            'oswald': ['Oswald', 'sans-serif']
-                        }
-                    }
-                }
-            }
-        </script>
-
         <style>
             .star-rating {
                 display: inline-flex;
@@ -88,7 +65,7 @@
                         @endforeach
                     </div>
 
-                    {{-- Directors & Cast --}}
+                    {{-- Directors & Cast with Rating Summary --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-4">
                             <div>
@@ -96,7 +73,7 @@
                                     <i class='bx bx-video'></i> Director(s)
                                 </h3>
                                 <p class="text-text-secondary">
-                                    {{ $directors->pluck('name')->implode(' • ') ?: 'N/A' }}
+                                    {{ (is_array($directors) ? implode(' • ', array_column($directors, 'name')) : $directors->pluck('name')->implode(' • ')) ?: 'N/A' }}
                                 </p>
                             </div>
 
@@ -105,12 +82,12 @@
                                     <i class='bx bxs-user'></i> Cast
                                 </h3>
                                 <p class="text-text-secondary">
-                                    {{ $actors->pluck('name')->implode(' • ') ?: 'N/A' }}
+                                    {{ (is_array($actors) ? implode(' • ', array_column($actors, 'name')) : $actors->pluck('name')->implode(' • ')) ?: 'N/A' }}
                                 </p>
                             </div>
                         </div>
 
-                        {{-- Ratings Summary --}}
+                        {{-- Rating Summary --}}
                         <div class="text-center space-y-3">
                             @php
                                 $avgRating = $reviews->avg('rating') ?? 0;
@@ -142,12 +119,20 @@
                             </a>
                         @endif
 
-                        <button id="favorite-btn" type="button"
-                            class="btn btn-outline btn-accent"
-                            onclick="alert('Favorite functionality - backend not implemented')">
-                            <i class="bx bx-heart"></i>
-                            <span class="fav-text">Add to Favorites</span>
-                        </button>
+                        <x-favorite-button
+                            :movie="$movie"
+                            :is-favorited="auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists()"
+                            :favorite-count="$movie->favoritedBy()->count()"
+                        />
+
+                        @if(auth()->check())
+                            <x-review-section
+                                :movie="$movie"
+                                :user-review="$reviews->where('user_id', auth()->id())->first()"
+                                :avg-rating="$reviews->avg('rating') ?? 0"
+                                :total-reviews="$reviews->count()"
+                            />
+                        @endif
                     </div>
                 </div>
             </div>
@@ -168,59 +153,10 @@
         {{-- Trailer + Reviews --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {{-- Trailer --}}
-            @if(!empty($movie->trailer_url))
-                <div id="trailer-section" class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6">
-                    <h2 class="text-2xl font-bold mb-6 text-accent flex items-center gap-3">
-                        <i class='bx bx-play-circle'></i> Trailer
-                    </h2>
-                    <div class="aspect-video rounded-lg overflow-hidden bg-base-300 max-w-lg mx-auto">
-                       @if(isset($movie->youtube_id))
-                            <iframe class="w-full h-full"
-                                    src="https://www.youtube.com/embed/{{ $movie->youtube_id }}"
-                                    allowfullscreen></iframe>
-                        @else
-                            <div class="flex items-center justify-center h-full text-gray-400">
-                                <p>Trailer not available</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
+            <x-trailer-section :movie="$movie" />
 
             {{-- Reviews --}}
-            <div class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6">
-                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3 text-accent">
-                    <i class='bx bx-message-dots'></i> User Reviews
-                    <span class="text-base text-text-secondary">({{ $reviews->count() }})</span>
-                </h2>
-
-                <button onclick="alert('Review functionality - backend not implemented')"
-                        class="btn btn-accent mb-6">
-                    <i class='bx bx-star'></i> Leave a Review
-                </button>
-
-                <div class="space-y-4 max-h-96 overflow-y-auto">
-                    @forelse($reviews as $review)
-                        <div class="bg-card-bg/50 border border-border-color rounded-lg p-4 hover:bg-card-bg/70 transition-colors">
-                            <div class="flex justify-between items-center mb-3">
-                                <h4 class="font-semibold text-accent">{{ $review->username }}</h4>
-                                <div class="flex items-center gap-2">
-                                    <div class="star-rating">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <i class="bx {{ $i <= $review->rating ? 'bxs-star star text-yellow-400' : 'bx-star star empty' }}"
-                                            style="font-size: 1rem;"></i>
-                                        @endfor
-                                    </div>
-                                    <span class="text-accent font-semibold text-sm">{{ $review->rating }}</span>
-                                </div>
-                            </div>
-                            <p class="text-text-secondary text-sm">{{ $review->review }}</p>
-                        </div>
-                    @empty
-                        <p class="text-text-secondary text-sm italic">No reviews yet.</p>
-                    @endforelse
-                </div>
-            </div>
+            <x-reviews-list :reviews="$reviews" :movie="$movie" />
         </div>
     </section>
 
@@ -234,27 +170,10 @@
 
         <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
             @foreach($relatedMovies ?? [] as $related)
-                <x-movie-card :movie="$movie" />
-                {{-- <div class="group rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 hover:border-green-500/70 transition">
-                    <div class="relative">
-                        <a href="{{ route('movie.show', $related->id) }}">
-                            <img src="{{ $related->poster_url }}"
-                                class="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105"
-                                alt="{{ $related->title }}">
-                        </a>
-                        <div class="absolute top-2 right-2">
-                            <span class="bg-green-600/90 text-white font-semibold text-xs px-2 py-1 rounded-md flex items-center gap-1">
-                                <i class='bx bxs-star text-yellow-300'></i>
-                                {{ $related->avg_rating ?? 'N/A' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h5 class="font-semibold text-base text-white truncate">{{ $related->title }}</h5>
-                    </div>
-                </div> --}}
+                <x-movie-card :movie="$related" />
             @endforeach
         </div>
     </section>
+
 
 @endsection

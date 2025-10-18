@@ -5,6 +5,8 @@ use App\Http\Controllers\Socialite\ProviderRedirectController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\RateReviewController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Models\Movie;
@@ -63,5 +65,9 @@ Route::post('/people/remove',[PeopleController::class, 'remove'])->name('people.
 Route::post('/people/search',[PeopleController::class, 'search'])->name('people.search');
 
 Route::get('/profile', function () {
-    return view('pages.profile');
+    return view('profile');
 })->name('profile');
+
+// Reviews and favorites (AJAX)
+Route::post('/reviews', [RateReviewController::class, 'store'])->name('reviews.store');
+Route::post('/favorites/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
