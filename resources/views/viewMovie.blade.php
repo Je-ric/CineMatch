@@ -119,6 +119,10 @@
                             'favoriteCount' => $movie->favoritedBy()->count()
                         ])
 
+                            <x-review-button
+                :movie="$movie"
+                :user-review="$reviews->where('user_id', auth()->id())->first()"
+            />
                     </div>
                 </div>
             </div>
@@ -139,7 +143,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {{-- Trailer --}}
             <x-trailer-section :movie="$movie" />
-
+            
             {{-- Reviews --}}
             <x-reviews-list :reviews="$reviews" :movie="$movie" />
         </div>

@@ -1,12 +1,25 @@
+@props(['movie', 'userReview' => null, 'isLoggedIn' => null])
+
+@php
+    $isLoggedIn = $isLoggedIn ?? auth()->check();
+@endphp
+
 @if ($userReview)
-    <button class="btn btn-outline btn-disabled" disabled title="Already reviewed">
-        <i class="bx bx-check"></i>
-        Already Reviewed
+    <button class="btn btn-outline btn-disabled relative z-50" disabled title="Already reviewed">
+        <i class="bx bx-check"></i> Already Reviewed
     </button>
 @else
-    <button id="open-review-modal-{{ $movie->id }}" class="btn btn-accent"
-        {{ !$isLoggedIn ? 'disabled title="Login required"' : '' }}>
-        <i class="bx bx-star"></i>
-        Leave a Review
+    <button
+        id="open-review-modal-{{ $movie->id }}"
+        type="button"
+        class="btn btn-accent relative z-50"
+        {!! !$isLoggedIn ? 'disabled aria-disabled="true" title="Login required"' : '' !!}
+        onclick="document.getElementById('review-modal-{{ $movie->id }}').showModal()"
+        aria-haspopup="dialog" aria-controls="review-modal-{{ $movie->id }}"
+    >
+        <i class="bx bx-star"></i> Leave a Review
     </button>
 @endif
+
+{{-- Include the modal --}}
+<x-review-modal :movie="$movie" :user-review="$userReview" :is-logged-in="$isLoggedIn" />

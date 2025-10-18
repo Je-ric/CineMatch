@@ -12,13 +12,14 @@
 
     @if ($user && $user->role === 'user')
         @if (!$userReview)
-            <button
+            {{-- <button
                 id="open-review-modal-{{ $movie->id }}"
                 class="btn btn-accent mb-6"
                 onclick="document.getElementById('review-modal-{{ $movie->id }}').showModal()"
             >
                 <i class="bx bx-star"></i> Leave a Review
-            </button>
+            </button> --}}
+            
         @else
             <div class="bg-accent/10 border border-accent/30 rounded-lg p-4 mb-6">
                 <div class="flex justify-between items-start">
