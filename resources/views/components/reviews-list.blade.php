@@ -57,24 +57,29 @@
     {{-- ALL REVIEWS --}}
     <div id="reviews-container-{{ $movie->id }}" class="space-y-4 max-h-96 overflow-y-auto pr-2">
         @forelse($reviews as $review)
-            <div class="bg-card-bg/50 border border-border-color rounded-lg p-4 hover:bg-card-bg/70 transition-colors">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center gap-2">
-                        <h4 class="font-semibold text-accent">{{ $review->username }}</h4>
-                        @if ($user && $review->user_id === $user->id)
-                            <span class="badge badge-sm badge-accent">Your Review</span>
-                        @endif
+            <div class="bg-accent/10 border border-accent/30 rounded-lg p-4 hover:bg-accent/20 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="font-bold text-accent mb-2">
+                                {{ $review->user->name ?? $review->username ?? 'Anonymous' }}
+                            </h3>
+                            @if ($user && $review->user_id === $user->id)
+                                <span class="badge badge-sm badge-accent">Your Review</span>
+                            @endif
+                        </div>
+                        <p class="text-text-secondary">{{ $review->review }}</p>
                     </div>
-                    <div class="flex items-center gap-2">
+
+                    <div class="flex items-center gap-2 ml-4">
                         <div class="star-rating">
                             @for ($i = 1; $i <= 5; $i++)
                                 <i class="bx {{ $i <= $review->rating ? 'bxs-star text-yellow-400' : 'bx-star text-gray-600' }}"></i>
                             @endfor
                         </div>
-                        <span class="text-accent font-semibold text-sm">{{ $review->rating }}</span>
+                        <span class="text-accent font-semibold">{{ $review->rating }}</span>
                     </div>
                 </div>
-                <p class="text-text-secondary text-sm">{{ $review->review }}</p>
             </div>
         @empty
             <p class="text-text-secondary text-sm italic">No reviews yet.</p>
