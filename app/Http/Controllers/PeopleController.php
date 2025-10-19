@@ -17,7 +17,7 @@ class PeopleController extends Controller
 
         $movie = Movie::findOrFail($validated['movie_id']);
 
-        // Fetch using pivot filter (no joins)
+        // Fetch using pivot filter 
         $people = $movie->cast()
             ->wherePivot('role', $validated['role'])
             ->orderBy('name')
