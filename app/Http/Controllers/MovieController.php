@@ -311,8 +311,8 @@ class MovieController extends Controller
         $this->deletePublicFile($movie->getRawOriginal('poster_url'));
         $this->deletePublicFile($movie->getRawOriginal('background_url'));
         $movie->genres()->detach();
-        $movie->countries()->detach();
-        $movie->languages()->detach();
+        // $movie->countries()->detach();
+        // $movie->languages()->detach();
         $movie->cast()->detach();
         $movie->delete();
         return response()->json(['success' => true]);
@@ -382,7 +382,7 @@ class MovieController extends Controller
             base_path('JSON/country.json'),
         ];
 
-        // If JSON exists, we could use it for suggestions only 
+        // If JSON exists, we could use it for suggestions only
         foreach ($jsonPathCandidates as $jsonPath) {
             if (is_file($jsonPath)) {
                 break;
