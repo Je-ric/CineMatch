@@ -17,9 +17,9 @@ class ProfileController extends Controller
 
         $userId = $user->id;
 
-        // Modularized helpers
-        [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user);
-        [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user);
+        // Modularized helpers - delegate actual fetching to RecommendController
+        [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user, $recommend);
+        [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user, $recommend);
         $recommendations = $this->getRecommendationsData($recommend, $userId);
 
         return view('profile', array_merge(
@@ -36,33 +36,27 @@ class ProfileController extends Controller
         ));
     }
 
-    private function getFavoritesData($user): array
+    private function getFavoritesData($user, RecommendController $recommend): array
     {
-        $favModels = $user->favorites()->with(['country', 'language', 'genres', 'ratings'])->get();
+        // delegate retrieval to RecommendController (returns formatted Eloquent models with relations loaded)
+        $favModels = $recommend->getFavorites($user->id); // Collection
 
+        // shape for view (keep minimal object form)
         $favorites = $favModels->map(function($m) {
             return (object)[
                 'id' => $m->id,
                 'title' => $m->title,
                 'release_year' => $m->release_year,
                 'poster_url' => $m->poster_url ? asset($m->poster_url) : null,
-                'avg_rating' => $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : 0,
+                'avg_rating' => $m->avg_rating ?? ($m->ratings->count() ? round($m->ratings->avg('rating'), 1) : 0),
                 'country_name' => optional($m->country)->name ?? 'Unknown',
                 'language_name' => optional($m->language)->name ?? 'Unknown',
                 'genre_ids' => $m->genres->pluck('id')->implode(','),
             ];
         });
 
-        $favGenres = $favModels
-            ->flatMap(fn($m) => $m->genres)
-            ->groupBy('id')
-            ->map(fn($group) => (object)[
-                'id' => $group->first()->id,
-                'name' => $group->first()->name,
-                'cnt' => $group->count(),
-            ])
-            ->values()
-            ->toArray();
+        // use centralized helpers for genre counts (no local flatMap/groupBy redundancy)
+        $favGenres = $recommend->getFavCountsByGenre($user->id)->toArray();
 
         $favCountries = $favModels
             ->filter(fn($m) => !empty($m->country))
@@ -78,43 +72,27 @@ class ProfileController extends Controller
         return [$favorites, $favGenres, $favCountries];
     }
 
-    private function getRatedData($user): array
+    private function getRatedData($user, RecommendController $recommend): array
     {
-        $ratedModels = $user->ratings()
-            ->with('movie.genres', 'movie.country', 'movie.language', 'movie.ratings')
-            ->get();
+        $ratedModels = $recommend->getRated($user->id); // Collection of formatted movies
 
-        $ratedMovieModels = $ratedModels
-            ->map(fn($r) => $r->movie)
-            ->filter()
-            ->unique('id')
-            ->values();
-
-        $rated = $ratedMovieModels->map(function($m) {
+        $rated = $ratedModels->map(function($m) {
             return (object)[
                 'id' => $m->id,
                 'title' => $m->title,
                 'release_year' => $m->release_year,
                 'poster_url' => $m->poster_url ? asset($m->poster_url) : null,
-                'avg_rating' => $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : null,
+                'avg_rating' => $m->avg_rating ?? ($m->ratings->count() ? round($m->ratings->avg('rating'), 1) : null),
                 'country_name' => optional($m->country)->name,
                 'language_name' => optional($m->language)->name,
                 'genre_ids' => $m->genres->pluck('id')->implode(','),
             ];
         });
 
-        $ratedGenres = $ratedMovieModels
-            ->flatMap(fn($m) => $m->genres)
-            ->groupBy('id')
-            ->map(fn($group) => (object)[
-                'id' => $group->first()->id,
-                'name' => $group->first()->name,
-                'cnt' => $group->count(),
-            ])
-            ->values()
-            ->toArray();
+        // use centralized helper for rated-genre counts
+        $ratedGenres = $recommend->getRatedCountsByGenre($user->id)->toArray();
 
-        $ratedCountries = $ratedMovieModels
+        $ratedCountries = $ratedModels
             ->filter(fn($m) => !empty($m->country))
             ->groupBy(fn($m) => $m->country->id)
             ->map(fn($group) => (object)[

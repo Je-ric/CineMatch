@@ -12,27 +12,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+
 class MovieController extends Controller
 {
     public function index()
     {
         $movies = Movie::with(['genres', 'ratings', 'country', 'language'])->get();
-
-        // Fallback if no movies
-        if ($movies->isEmpty()) {
-            $movies = collect([
-                (object)[
-                    'id' => 0,
-                    'title' => 'Sample Movie — Add real data',
-                    'release_year' => date('Y'),
-                    'poster_url' => asset('images/placeholders/sample1.jpg'),
-                    'avg_rating' => null,
-                    'country_name' => 'Unknown',
-                    'language_name' => 'Unknown',
-                    'genre_ids' => '',
-                ],
-            ]);
-        }
 
         // Transform for frontend
         $moviesJson = $movies->map(function ($m) {
@@ -79,39 +64,6 @@ class MovieController extends Controller
     public function show($id)
     {
         $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($id);
-
-        // if (!$movie) {
-        //     $movie = (object)[
-        //         'id' => 0,
-        //         'title' => 'Movie not found',
-        //         'description' => 'This movie does not exist yet. Add real data in the admin panel.',
-        //         'release_year' => null,
-        //         'poster_url' => asset('images/placeholders/sample1.jpg'),
-        //         'background_url' => asset('images/placeholders/background.jpg'),
-        //         'trailer_url' => null,
-        //         'genres' => collect([]),
-        //         'country' => (object)['name' => 'Unknown'],
-        //         'language' => (object)['name' => 'Unknown'],
-        //         'cast' => collect([]),
-        //     ];
-
-        //     $genres = [];
-        //     $directors = collect([]);
-        //     $actors = collect([]);
-        //     $reviews = collect();
-        //     $related = collect([(object)[
-        //         'id' => 0,
-        //         'title' => 'No related movies found',
-        //         'poster_url' => asset('images/placeholders/no_related.jpg'),
-        //         'release_year' => null,
-        //         'avg_rating' => null,
-        //         'country_name' => null,
-        //         'language_name' => null,
-        //     ]]);
-
-        //     return view('viewMovie', compact('movie', 'reviews', 'related', 'genres', 'directors', 'actors'))
-        //         ->with(['realReviewCount' => 0, 'avgRating' => null]);
-        // }
 
         // Derived attributes
         $movie->country_name = $movie->country->name ?? 'Unknown';

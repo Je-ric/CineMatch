@@ -116,7 +116,6 @@
                 @endforeach
             @endif
 
-            {{-- Fallback if no recommendations --}}
             @if ((empty($genreShelvesFav) || count($genreShelvesFav) === 0) && (empty($genreShelvesRated) || count($genreShelvesRated) === 0))
                 <div class="text-center py-10 text-gray-400">
                     <i class="bx bx-movie text-5xl mb-2"></i>

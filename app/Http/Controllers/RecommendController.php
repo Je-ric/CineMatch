@@ -275,4 +275,54 @@ public function getFavorites($userId = null, $limit = 12)
 
         return $shelves;
     }
+
+    /**
+     * Get favorite genre counts for a user.
+     * Returns collection of objects: { id, name, cnt }
+     */
+    public function getFavCountsByGenre(int $userId)
+    {
+        if (! $userId) return collect();
+
+        $genres = Genre::withCount(['movies as cnt' => function ($q) use ($userId) {
+            $q->whereHas('favoritedBy', function ($q2) use ($userId) {
+                $q2->where('user_id', $userId);
+            });
+        }])
+        ->having('cnt', '>', 0)
+        ->orderByDesc('cnt')
+        ->get()
+        ->map(fn($g) => (object)[
+            'id' => $g->id,
+            'name' => $g->name,
+            'cnt' => (int) $g->cnt,
+        ]);
+
+        return $genres->values();
+    }
+
+    /**
+     * Get rated-genre counts for a user.
+     * Returns collection of objects: { id, name, cnt }
+     */
+    public function getRatedCountsByGenre(int $userId)
+    {
+        if (! $userId) return collect();
+
+        $genres = Genre::withCount(['movies as cnt' => function ($q) use ($userId) {
+            $q->whereHas('ratings', function ($q2) use ($userId) {
+                $q2->where('user_id', $userId);
+            });
+        }])
+        ->having('cnt', '>', 0)
+        ->orderByDesc('cnt')
+        ->get()
+        ->map(fn($g) => (object)[
+            'id' => $g->id,
+            'name' => $g->name,
+            'cnt' => (int) $g->cnt,
+        ]);
+
+        return $genres->values();
+    }
 }
