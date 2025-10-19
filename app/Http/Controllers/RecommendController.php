@@ -190,17 +190,19 @@ class RecommendController extends Controller
             return collect();
         }
 
-        return Genre::withCount([
-            "movies as fav_count" => function ($q) use ($userId) {
-                $q->whereHas("favoritedBy", function ($q2) use ($userId) {
-                    $q2->where("user_id", $userId);
-                });
-            },
-        ])
-            ->having("fav_count", ">", 0)
-            ->orderByDesc("fav_count")
-            ->limit($limit)
-            ->get();
+        // Get genres that the user has favorited movies in
+        $genres = Genre::whereHas('movies.favoritedBy', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->withCount(['movies as fav_count' => function ($query) use ($userId) {
+            $query->whereHas('favoritedBy', fn($q) => $q->where('user_id', $userId));
+        }])
+        ->having('fav_count', '>', 0)
+        ->orderByDesc('fav_count')
+        ->limit($limit)
+        ->get();
+
+        return $genres;
     }
 
     /**
