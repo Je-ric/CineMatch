@@ -2,18 +2,22 @@
 
 @section('page-content')
     <div class="px-6 md:px-10 py-10">
+        <!-- Header and Filters -->
         <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
                 <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
                 <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <label
-                    class="flex items-center w-full md:w-96 bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm">
+            <div class="flex flex-wrap gap-3 w-full md:w-auto items-center">
+                <!-- Search -->
+                <div
+                    class="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm w-full md:w-96">
                     <span class="px-3"><i class="bx bx-search text-gray-400 text-lg"></i></span>
                     <input id="search" type="text" placeholder="Search movies by title..."
                         class="w-full bg-neutral-900 text-gray-200 placeholder-gray-500 focus:outline-none px-2 py-2 text-sm">
-                </label>
+                </div>
+
+                <!-- Sort -->
                 <select id="sortSelect"
                     class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200">
                     <option value="year_desc">Sort: Year (New → Old)</option>
@@ -21,17 +25,41 @@
                     <option value="title_asc">Sort: Title (A→Z)</option>
                     <option value="title_desc">Sort: Title (Z→A)</option>
                 </select>
+
+                <!-- Genre -->
                 <select id="genreFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-48">
+                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[10rem]">
                     <option value="">All Genres</option>
+                    @foreach ($availableGenres ?? [] as $genre)
+                        <option value="{{ strtolower($genre) }}">{{ $genre }}</option>
+                    @endforeach
                 </select>
+
+                <!-- Year -->
                 <select id="yearFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-32">
+                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[7rem]">
                     <option value="">All Years</option>
+                    @foreach ($availableYears ?? [] as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
                 </select>
+
+                <!-- Country -->
                 <select id="countryFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-40">
+                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[9rem]">
                     <option value="">All Countries</option>
+                    @foreach ($availableCountries ?? [] as $country)
+                        <option value="{{ strtolower($country) }}">{{ $country }}</option>
+                    @endforeach
+                </select>
+
+                <!-- Language -->
+                <select id="languageFilter"
+                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[9rem]">
+                    <option value="">All Languages</option>
+                    @foreach ($availableLanguages ?? [] as $lang)
+                        <option value="{{ strtolower($lang) }}">{{ $lang }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -43,19 +71,9 @@
                 <h3 class="text-2xl font-semibold">Trending now</h3>
             </div>
             <div id="trendingGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                @if (auth()->check() && (auth()->user()->role ?? null) === 'admin')
-                    @foreach($trendingJson ?? [] as $m)
-                        <x-movie-card :movie="(object) $m" :is-admin="true" />
-                    @endforeach
-                @else
-                    @foreach($trendingJson ?? [] as $m)
-                        <x-movie-card :movie="(object) $m" />
-                        {{-- array --}}
-                    @endforeach
-                @endif
-                {{-- @foreach($trendingJson ?? [] as $m)
+                @foreach ($trendingJson ?? [] as $m)
                     <x-movie-card :movie="(object) $m" :is-admin="auth()->check() && (auth()->user()->role ?? null) === 'admin'" />
-                @endforeach --}}
+                @endforeach
             </div>
         </section>
 
@@ -66,8 +84,14 @@
                 <h3 class="text-2xl font-semibold">All movies</h3>
             </div>
             <div id="allGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                @foreach($moviesJson ?? [] as $m)
-                    <x-movie-card :movie="(object) $m" :is-admin="auth()->check() && (auth()->user()->role ?? null) === 'admin'" />
+                @foreach ($moviesJson ?? [] as $m)
+                    <div class="movie-card" data-title="{{ strtolower($m['title']) }}"
+                        data-year="{{ $m['release_year'] ?? '' }}"
+                        data-country="{{ strtolower($m['country_name'] ?? '') }}"
+                        data-language="{{ strtolower($m['language_name'] ?? '') }}"
+                        data-genres="{{ implode(',', array_map('strtolower', array_column($m['genres'] ?? [], 'name'))) }}">
+                        <x-movie-card :movie="(object) $m" :is-admin="auth()->check() && (auth()->user()->role ?? null) === 'admin'" />
+                    </div>
                 @endforeach
             </div>
             <div id="allEmpty" class="hidden py-16 text-center">
@@ -76,92 +100,81 @@
             </div>
         </section>
     </div>
-
-    @push('scripts')
-        <script>
-            // Simple search and filter functionality
-            document.addEventListener('DOMContentLoaded', function() {
-                const searchInput = document.getElementById('search');
-                const sortSelect = document.getElementById('sortSelect');
-                const genreFilter = document.getElementById('genreFilter');
-                const yearFilter = document.getElementById('yearFilter');
-                const countryFilter = document.getElementById('countryFilter');
-
-                const allMovies = @json($moviesJson);
-                const trendingMovies = @json($trendingJson);
-
-                function filterMovies() {
-                    const searchTerm = searchInput.value.toLowerCase();
-                    const selectedYear = yearFilter.value;
-                    const selectedCountry = countryFilter.value;
-                    const selectedGenre = genreFilter.value;
-                    const sortBy = sortSelect.value;
-
-                    let filtered = allMovies.filter(movie => {
-                        const matchesSearch = !searchTerm || movie.title.toLowerCase().includes(searchTerm);
-                        const matchesYear = !selectedYear || movie.release_year == selectedYear;
-                        const matchesCountry = !selectedCountry || movie.country_name === selectedCountry;
-                        const matchesGenre = !selectedGenre || (movie.genre_ids && movie.genre_ids.split(',').includes(selectedGenre));
-
-                        return matchesSearch && matchesYear && matchesCountry && matchesGenre;
-                    });
-
-                    // Sort movies
-                    if (sortBy === 'year_desc') {
-                        filtered.sort((a, b) => (b.release_year || 0) - (a.release_year || 0));
-                    } else if (sortBy === 'year_asc') {
-                        filtered.sort((a, b) => (a.release_year || 0) - (b.release_year || 0));
-                    } else if (sortBy === 'title_asc') {
-                        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-                    } else if (sortBy === 'title_desc') {
-                        filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
-                    }
-
-                    // Show/hide trending section
-                    const hasFilters = searchTerm || selectedYear || selectedCountry || selectedGenre || sortBy !== 'year_desc';
-                    document.getElementById('trendingSection').style.display = hasFilters ? 'none' : 'block';
-
-                    // Show empty state if no results
-                    const emptyState = document.getElementById('allEmpty');
-                    emptyState.style.display = filtered.length === 0 ? 'block' : 'none';
-
-                    console.log(`Filtered ${filtered.length} movies`);
-                }
-
-                // Add event listeners
-                [searchInput, sortSelect, genreFilter, yearFilter, countryFilter].forEach(element => {
-                    element.addEventListener('input', filterMovies);
-                    element.addEventListener('change', filterMovies);
-                });
-
-                // Populate filters
-                const years = [...new Set(allMovies.map(m => m.release_year).filter(Boolean))].sort((a, b) => b - a);
-                const countries = [...new Set(allMovies.map(m => m.country_name).filter(Boolean))].sort();
-
-                years.forEach(year => {
-                    const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    yearFilter.appendChild(option);
-                });
-
-                countries.forEach(country => {
-                    const option = document.createElement('option');
-                    option.value = country;
-                    option.textContent = country;
-                    countryFilter.appendChild(option);
-                });
-
-                console.log('Home page filters initialized');
-            });
-        </script>
-        @endpush
 @endsection
 
-{{-- hindi pa ayos yung sa admin side HAHAAHAHAAAA --}}
+@push('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
 
+            function filterMovies() {
+                const search = $('#search').val().toLowerCase().trim();
+                const sort = $('#sortSelect').val();
+                const genreFilter = $('#genreFilter').val()?.toLowerCase();
+                const yearFilter = $('#yearFilter').val();
+                const countryFilter = $('#countryFilter').val()?.toLowerCase();
+                const languageFilter = $('#languageFilter').val()?.toLowerCase();
 
-{{-- hindi pa ayos yung trending --}}
-{{-- sa viewMovie hindi ko alam pano ano yung related sa clicked movie --}}
-{{-- wala pang functionality yung filter sa index --}}
-{{-- sa viewMovie wala parin functionality yung leave review, add to fa --}}
+                let cards = $('#allGrid .movie-card');
+                let anyFilterActive = search || genreFilter || yearFilter || countryFilter || languageFilter || (
+                    sort && sort !== 'year_desc');
+
+                // Show/hide trending
+                if (anyFilterActive) {
+                    $('#trendingSection').hide();
+                } else {
+                    $('#trendingSection').show();
+                }
+
+                cards.each(function() {
+                    const $card = $(this);
+                    const title = $card.data('title') || '';
+                    const year = $card.data('year') || '';
+                    const country = $card.data('country') || '';
+                    const language = $card.data('language') || '';
+                    const genres = $card.data('genres') || '';
+
+                    let show = true;
+
+                    if (search && !title.includes(search)) show = false;
+                    if (genreFilter && !genres.split(',').includes(genreFilter)) show = false;
+                    if (yearFilter && year != yearFilter) show = false;
+                    if (countryFilter && country != countryFilter) show = false;
+                    if (languageFilter && language != languageFilter) show = false;
+
+                    $card.toggle(show);
+                });
+
+                // Show emptry state
+                if ($('#allGrid .movie-card:visible').length === 0) {
+                    $('#allEmpty').removeClass('hidden');
+                } else {
+                    $('#allEmpty').addClass('hidden');
+                }
+
+                // Sorting
+                let sorted = $('#allGrid .movie-card:visible').sort(function(a, b) {
+                    const $a = $(a);
+                    const $b = $(b);
+                    switch (sort) {
+                        case 'year_asc':
+                            return ($a.data('year') || 0) - ($b.data('year') || 0);
+                        case 'year_desc':
+                            return ($b.data('year') || 0) - ($a.data('year') || 0);
+                        case 'title_asc':
+                            return ($a.data('title') || '').localeCompare($b.data('title') || '');
+                        case 'title_desc':
+                            return ($b.data('title') || '').localeCompare($a.data('title') || '');
+                    }
+                });
+
+                $('#allGrid').append(sorted); // reorder DOM
+            }
+
+            // run whenever change
+            $('#search, #sortSelect, #genreFilter, #yearFilter, #countryFilter, #languageFilter').on('input change',
+                filterMovies);
+
+        });
+    </script>
+@endpush

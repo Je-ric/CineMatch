@@ -36,7 +36,7 @@
                 </p>
             </div>
 
-            {{-- Review text --}}
+            {{-- Review --}}
             <div class="form-control">
                 <label class="label">
                     <span class="label-text">Your Review</span>

@@ -15,35 +15,33 @@ use Illuminate\Support\Facades\DB;
 
 class MovieController extends Controller
 {
+
     public function index()
     {
+        // Get all movies with relations
         $movies = Movie::with(['genres', 'ratings', 'country', 'language'])->get();
 
         // Transform for frontend
         $moviesJson = $movies->map(function ($m) {
-            $avg = isset($m->ratings) && $m->ratings instanceof Collection
-                ? round($m->ratings->avg('rating') ?? 0, 1)
-                : ($m->avg_rating ?? null);
-
+            $avg = $m->ratings->avg('rating');
             return [
-                'id' => $m->id ?? 0,
+                'id' => $m->id,
                 'title' => $m->title ?? 'Untitled',
-                'release_year' => $m->release_year ?? null,
+                'release_year' => $m->release_year,
                 'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
-                'avg_rating' => $avg ?: null,
-                'country_name' => $m->country->name ?? 'Unknown',
-                'language_name' => $m->language->name ?? 'Unknown',
-                'genre_ids' => $m->genres->pluck('id')->implode(',') ?? '',
+                'avg_rating' => $avg ? round($avg, 1) : null,
+                'country_name' => $m->country?->name ?? 'Unknown',
+                'language_name' => $m->language?->name ?? 'Unknown',
+                'genre_ids' => $m->genres->pluck('id')->implode(','),
+                'genres' => $m->genres->map(fn($g) => ['id'=>$g->id, 'name'=>$g->name])->toArray(),
             ];
         })->toArray();
 
-        // Trending movies
-        $trendingCollection = Movie::with(['ratings', 'country', 'language', 'genres'])->get()->map(function ($m) {
-            $m->avg_rating = round($m->ratings->avg('rating') ?? 0, 1);
+        // Trending movies (top 6 by avg rating)
+        $trending = $movies->map(function ($m) {
+            $m->avg_rating = $m->ratings->avg('rating') ? round($m->ratings->avg('rating'), 1) : 0;
             return $m;
-        });
-
-        $trending = $trendingCollection->sortByDesc('avg_rating')->take(6);
+        })->sortByDesc('avg_rating')->take(6);
 
         $trendingJson = $trending->map(function ($m) {
             return [
@@ -52,14 +50,22 @@ class MovieController extends Controller
                 'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
                 'release_year' => $m->release_year,
                 'avg_rating' => $m->avg_rating ?: null,
-                'country_name' => $m->country->name ?? 'Unknown',
-                'language_name' => $m->language->name ?? 'Unknown',
+                'country_name' => $m->country?->name ?? 'Unknown',
+                'language_name' => $m->language?->name ?? 'Unknown',
                 'genre_ids' => $m->genres->pluck('id')->implode(','),
+                'genres' => $m->genres->map(fn($g) => ['id'=>$g->id, 'name'=>$g->name])->toArray(),
             ];
         })->values()->toArray();
 
-        return view('home', compact('moviesJson', 'trendingJson'));
+        //  data from DB
+        $availableYears = $movies->pluck('release_year')->filter()->unique()->sortDesc()->values()->toArray();
+        $availableCountries = $movies->pluck('country.name')->filter()->unique()->map(fn($c)=>trim($c))->sort()->values()->toArray();
+        $availableLanguages = $movies->pluck('language.name')->filter()->unique()->map(fn($l)=>trim($l))->sort()->values()->toArray();
+        $availableGenres = Genre::orderBy('name')->pluck('name')->map(fn($g) => trim($g))->values()->toArray();
+
+        return view('home', compact('moviesJson', 'trendingJson', 'availableYears', 'availableCountries', 'availableLanguages', 'availableGenres'));
     }
+
 
     public function show($id)
     {
