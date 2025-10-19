@@ -17,7 +17,7 @@ class ProfileController extends Controller
 
         $userId = $user->id;
 
-        // Modularized helpers - delegate actual fetching to RecommendController
+        // Fetch to RecommendController
         [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user, $recommend);
         [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user, $recommend);
         $recommendations = $this->getRecommendationsData($recommend, $userId);
@@ -38,7 +38,7 @@ class ProfileController extends Controller
 
     private function getFavoritesData($user, RecommendController $recommend): array
     {
-        // delegate retrieval to RecommendController (returns formatted Eloquent models with relations loaded)
+        // may retrieval sa RecommendController
         $favModels = $recommend->getFavorites($user->id); // Collection
 
         // shape for view (keep minimal object form)
@@ -55,7 +55,7 @@ class ProfileController extends Controller
             ];
         });
 
-        // use centralized helpers for genre counts (no local flatMap/groupBy redundancy)
+        // same here
         $favGenres = $recommend->getFavCountsByGenre($user->id)->toArray();
 
         $favCountries = $favModels
@@ -74,6 +74,7 @@ class ProfileController extends Controller
 
     private function getRatedData($user, RecommendController $recommend): array
     {
+        // may retrieval sa RecommendController
         $ratedModels = $recommend->getRated($user->id); // Collection of formatted movies
 
         $rated = $ratedModels->map(function($m) {
@@ -89,7 +90,7 @@ class ProfileController extends Controller
             ];
         });
 
-        // use centralized helper for rated-genre counts
+        // same here
         $ratedGenres = $recommend->getRatedCountsByGenre($user->id)->toArray();
 
         $ratedCountries = $ratedModels
@@ -109,8 +110,8 @@ class ProfileController extends Controller
     private function getRecommendationsData(RecommendController $recommend, $userId): array
     {
         return [
-            'genreShelvesFav' => $recommend->getGenreShelvesForUser($userId, 'favorites', 5, 6),
-            'genreShelvesRated' => $recommend->getGenreShelvesForUser($userId, 'rated', 5, 6),
+            'genreShelvesFav' => $recommend->getGenreShelvesForUser($userId, 'favorites', 5, 5),
+            'genreShelvesRated' => $recommend->getGenreShelvesForUser($userId, 'rated', 5, 5),
             'topGenresFav' => $recommend->getTopGenresFromFavorites($userId, 5),
             'topGenresRated' => $recommend->getTopGenresFromRatings($userId, 5),
         ];
