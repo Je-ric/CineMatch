@@ -157,10 +157,7 @@ class RecommendController extends Controller
     }
 
 
-    /**
-     * Get top genres from user's rated movies
-     * returns Collection of Genre models (with count as 'rated_count')
-     */
+    // Top 5 genre sa favorites
     public function getTopGenresFromRatings($userId, $limit = 5)
     {
         if (!$userId) {
@@ -180,10 +177,7 @@ class RecommendController extends Controller
             ->get();
     }
 
-    /**
-     * Get top genres from user's favorites
-     * returns Collection of Genre models (with count as 'fav_count')
-     */
+    // Top 5 genre sa favorites
     public function getTopGenresFromFavorites($userId, $limit = 5)
     {
         if (!$userId) {
@@ -205,11 +199,10 @@ class RecommendController extends Controller
         return $genres;
     }
 
-    /**
-     * Build genre shelves for a user.
-     * $source = 'favorites' | 'rated'
-     * returns array of shelves: ['genre' => GenreModel, 'movies' => Collection(formatted)]
-     */
+
+    // Build genre shelves for a user.
+    // $source = 'favorites' | 'rated'
+    // returns array of shelves: ['genre' => GenreModel, 'movies' => Collection(formatted)]
     public function getGenreShelvesForUser(
         $userId,
         $source = "favorites",
@@ -231,7 +224,6 @@ class RecommendController extends Controller
 
         $shelves = $topGenres
             ->map(function ($genre) use ($userId, $perGenre) {
-                // getByGenre returns formatted movies collection
                 $movies = $this->getByGenre($genre->id, $userId, $perGenre);
                 return [
                     "genre" => $genre,
@@ -247,10 +239,9 @@ class RecommendController extends Controller
         return $shelves;
     }
 
-    /**
-     * Get favorite genre counts for a user.
-     * Returns collection of objects: { id, name, cnt }
-     */
+
+
+    // Counts per Fav Genre
     public function getFavCountsByGenre(int $userId)
     {
         if (!$userId) {
@@ -278,10 +269,7 @@ class RecommendController extends Controller
         return $genres->values();
     }
 
-    /**
-     * Get rated-genre counts for a user.
-     * Returns collection of objects: { id, name, cnt }
-     */
+    // Counts per Rated Genre
     public function getRatedCountsByGenre(int $userId)
     {
         if (!$userId) {
