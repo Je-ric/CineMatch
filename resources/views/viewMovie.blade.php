@@ -139,7 +139,7 @@
             </h2>
         </div>
 
-            <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 @if (!empty($relatedMovies) && $relatedMovies->isNotEmpty())
                     @foreach ($relatedMovies as $related)
                         <x-movie-card :movie="$related" />

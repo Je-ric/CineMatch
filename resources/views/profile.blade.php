@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('page-content')
-    <div class="max-w-8xl mx-auto px-4 py-8 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8 min-h-screen">
 
         {{-- Profile Header --}}
         <div
@@ -51,7 +51,7 @@
                 @endif
             </div>
 
-            <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 @forelse ($favorites as $movie)
                     <x-movie-card :movie="is_array($movie) ? (object) $movie : $movie" />
                 @empty
@@ -77,7 +77,7 @@
                 @endif
             </div>
 
-            <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 @forelse ($rated as $movie)
                     <x-movie-card :movie="(object) $movie" />
                 @empty
@@ -95,7 +95,7 @@
                 <h3 class="text-xl font-semibold text-accent mb-4">Because you like these genres</h3>
                 @foreach ($genreShelvesFav as $shelf)
                     <h4 class="text-lg font-medium text-white mb-2">{{ $shelf['genre']->name }}</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
                         @foreach ($shelf['movies'] as $movie)
                             <x-movie-card :movie="$movie" />
                         @endforeach
@@ -108,7 +108,7 @@
                 <h3 class="text-xl font-semibold text-accent mb-4">Recommended from genres you rated</h3>
                 @foreach ($genreShelvesRated as $shelf)
                     <h4 class="text-lg font-medium text-white mb-2">{{ $shelf['genre']->name }}</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
                         @foreach ($shelf['movies'] as $movie)
                             <x-movie-card :movie="$movie" />
                         @endforeach
