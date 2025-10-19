@@ -208,4 +208,71 @@ public function getFavorites($userId = null, $limit = 12)
         if ($limit > $max) $limit = $max;
         return $limit;
     }
+
+    /**
+     * Get top genres from user's rated movies
+     * returns Collection of Genre models (with count as 'rated_count')
+     */
+    public function getTopGenresFromRatings($userId, $limit = 5)
+    {
+        if (!$userId) return collect();
+
+        return Genre::withCount(['movies as rated_count' => function ($q) use ($userId) {
+            $q->whereHas('ratings', function ($q2) use ($userId) {
+                $q2->where('user_id', $userId);
+            });
+        }])
+        ->having('rated_count', '>', 0)
+        ->orderByDesc('rated_count')
+        ->limit($limit)
+        ->get();
+    }
+
+    /**
+     * Get top genres from user's favorites
+     * returns Collection of Genre models (with count as 'fav_count')
+     */
+    public function getTopGenresFromFavorites($userId, $limit = 5)
+    {
+        if (!$userId) return collect();
+
+        return Genre::withCount(['movies as fav_count' => function ($q) use ($userId) {
+            $q->whereHas('favoritedBy', function ($q2) use ($userId) {
+                $q2->where('user_id', $userId);
+            });
+        }])
+        ->having('fav_count', '>', 0)
+        ->orderByDesc('fav_count')
+        ->limit($limit)
+        ->get();
+    }
+
+    /**
+     * Build genre shelves for a user.
+     * $source = 'favorites' | 'rated'
+     * returns array of shelves: ['genre' => GenreModel, 'movies' => Collection(formatted)]
+     */
+    public function getGenreShelvesForUser($userId, $source = 'favorites', $topLimit = 5, $perGenre = 6)
+    {
+        if (!$userId) return [];
+
+        $topGenres = $source === 'rated'
+            ? $this->getTopGenresFromRatings($userId, $topLimit)
+            : $this->getTopGenresFromFavorites($userId, $topLimit);
+
+        if ($topGenres->isEmpty()) return [];
+
+        $shelves = $topGenres->map(function ($genre) use ($userId, $perGenre) {
+            // getByGenre returns formatted movies collection
+            $movies = $this->getByGenre($genre->id, $userId, $perGenre);
+            return [
+                'genre' => $genre,
+                'movies' => $movies,
+            ];
+        })->filter(fn($s) => !empty($s['movies']) && $s['movies']->count() > 0)
+          ->values()
+          ->toArray();
+
+        return $shelves;
+    }
 }

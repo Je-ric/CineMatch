@@ -3,8 +3,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\RecommendController;
 use App\Models\Genre;
+use App\Http\Controllers\RecommendController;
 
 class ProfileController extends Controller
 {
@@ -33,16 +33,13 @@ class ProfileController extends Controller
 
         // --- Fav genres: count each genre occurrence across favorited movies ---
         $favGenres = $favModels
-            ->flatMap(function($m) { return $m->genres; })    // collection of Genre models
+            ->flatMap(fn($m) => $m->genres)    // collection of Genre models
             ->groupBy('id')
-            ->map(function($group) {
-                $g = $group->first();
-                return (object)[
-                    'id' => $g->id,
-                    'name' => $g->name,
-                    'cnt' => $group->count(),
-                ];
-            })
+            ->map(fn($group) => (object)[
+                'id' => $group->first()->id,
+                'name' => $group->first()->name,
+                'cnt' => $group->count(),
+            ])
             ->values()
             ->toArray();
 
@@ -50,14 +47,11 @@ class ProfileController extends Controller
         $favCountries = $favModels
             ->filter(fn($m) => !empty($m->country))
             ->groupBy(fn($m) => $m->country->id)
-            ->map(function($group) {
-                $m = $group->first();
-                return (object)[
-                    'id' => $m->country->id,
-                    'name' => $m->country->name,
-                    'cnt' => $group->count(),
-                ];
-            })
+            ->map(fn($group) => (object)[
+                'id' => $group->first()->country->id,
+                'name' => $group->first()->country->name,
+                'cnt' => $group->count(),
+            ])
             ->values()
             ->toArray();
 
@@ -88,14 +82,11 @@ class ProfileController extends Controller
         $ratedGenres = $ratedMovieModels
             ->flatMap(fn($m) => $m->genres)
             ->groupBy('id')
-            ->map(function($group) {
-                $g = $group->first();
-                return (object)[
-                    'id' => $g->id,
-                    'name' => $g->name,
-                    'cnt' => $group->count(),
-                ];
-            })
+            ->map(fn($group) => (object)[
+                'id' => $group->first()->id,
+                'name' => $group->first()->name,
+                'cnt' => $group->count(),
+            ])
             ->values()
             ->toArray();
 
@@ -103,19 +94,21 @@ class ProfileController extends Controller
         $ratedCountries = $ratedMovieModels
             ->filter(fn($m) => !empty($m->country))
             ->groupBy(fn($m) => $m->country->id)
-            ->map(function($group) {
-                $m = $group->first();
-                return (object)[
-                    'id' => $m->country->id,
-                    'name' => $m->country->name,
-                    'cnt' => $group->count(),
-                ];
-            })
+            ->map(fn($group) => (object)[
+                'id' => $group->first()->country->id,
+                'name' => $group->first()->country->name,
+                'cnt' => $group->count(),
+            ])
             ->values()
             ->toArray();
 
-        // keep other view variables defined to avoid undefined variable issues
-        $recommendationsByGenres = $recommendationsByCountries = $genreShelves = $topGenres = [];
+        // === Recommendations: use RecommendController helpers to build shelves ===
+        $genreShelvesFav = $recommend->getGenreShelvesForUser($userId, 'favorites', 5, 6);
+        $genreShelvesRated = $recommend->getGenreShelvesForUser($userId, 'rated', 5, 6);
+
+        // Also expose top genres lists if needed in the view
+        $topGenresFav = $recommend->getTopGenresFromFavorites($userId, 5);
+        $topGenresRated = $recommend->getTopGenresFromRatings($userId, 5);
 
         return view('profile', compact(
             'user',
@@ -125,10 +118,11 @@ class ProfileController extends Controller
             'favCountries',
             'ratedGenres',
             'ratedCountries',
-            'recommendationsByGenres',
-            'recommendationsByCountries',
-            'genreShelves',
-            'topGenres'
+            // recommendations data
+            'genreShelvesFav',
+            'genreShelvesRated',
+            'topGenresFav',
+            'topGenresRated'
         ));
     }
 }
