@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('poster_url')->nullable();
             $table->string('background_url')->nullable();
             $table->string('trailer_url')->nullable();
+            $table->foreignId('country_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('language_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
         });
     }

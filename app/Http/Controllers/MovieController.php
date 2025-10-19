@@ -327,7 +327,8 @@ class MovieController extends Controller
         $folder = trim($folder, '/ ');
 
         // Rename: title_year_timestamp_random.ext
-        $safeTitle = Str::slug($movieTitle ?: 'movie');
+        // $safeTitle = Str::slug($movieTitle ?: 'movie');
+        $safeTitle = Str::slug($movieTitle ?: 'movie', '_');
         $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $year = $releaseYear ? (int)$releaseYear : date('Y');
         $filename = sprintf(
@@ -335,7 +336,7 @@ class MovieController extends Controller
             $safeTitle,
             $year,
             time(),
-            Str::random(6),
+            // Str::random(6),
             $extension
         );
 
