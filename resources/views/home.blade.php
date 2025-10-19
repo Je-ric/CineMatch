@@ -2,60 +2,56 @@
 
 @section('page-content')
     <div class="px-6 md:px-10 py-10">
-        <!-- Header and Filters -->
-        <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+
+        <div class="mb-8 items-start md:items-center justify-between gap-4">
             <div>
                 <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
                 <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
             </div>
-            <div class="flex flex-wrap gap-3 w-full md:w-auto items-center">
-                <!-- Search -->
+
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto items-center">
+
                 <div
-                    class="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm w-full md:w-96">
+                    class="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm w-full md:w-96 h-10">
                     <span class="px-3"><i class="bx bx-search text-gray-400 text-lg"></i></span>
                     <input id="search" type="text" placeholder="Search movies by title..."
-                        class="w-full bg-neutral-900 text-gray-200 placeholder-gray-500 focus:outline-none px-2 py-2 text-sm">
+                        class="w-full h-full bg-neutral-900 text-gray-200 placeholder-gray-500 focus:outline-none px-2 text-sm">
                 </div>
 
-                <!-- Sort -->
                 <select id="sortSelect"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200">
+                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3">
                     <option value="year_desc">Sort: Year (New → Old)</option>
                     <option value="year_asc">Sort: Year (Old → New)</option>
                     <option value="title_asc">Sort: Title (A→Z)</option>
                     <option value="title_desc">Sort: Title (Z→A)</option>
                 </select>
 
-                <!-- Genre -->
                 <select id="genreFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[10rem]">
+                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[10rem]">
                     <option value="">All Genres</option>
                     @foreach ($availableGenres ?? [] as $genre)
                         <option value="{{ strtolower($genre) }}">{{ $genre }}</option>
                     @endforeach
                 </select>
 
-                <!-- Year -->
                 <select id="yearFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[7rem]">
+                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[7rem]">
                     <option value="">All Years</option>
                     @foreach ($availableYears ?? [] as $year)
                         <option value="{{ $year }}">{{ $year }}</option>
                     @endforeach
                 </select>
 
-                <!-- Country -->
                 <select id="countryFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[9rem]">
+                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
                     <option value="">All Countries</option>
                     @foreach ($availableCountries ?? [] as $country)
                         <option value="{{ strtolower($country) }}">{{ $country }}</option>
                     @endforeach
                 </select>
 
-                <!-- Language -->
                 <select id="languageFilter"
-                    class="select select-bordered select-sm bg-neutral-900 border-neutral-700 text-gray-200 min-w-[9rem]">
+                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
                     <option value="">All Languages</option>
                     @foreach ($availableLanguages ?? [] as $lang)
                         <option value="{{ strtolower($lang) }}">{{ $lang }}</option>
@@ -64,7 +60,7 @@
             </div>
         </div>
 
-        <!-- Trending Section -->
+
         <section id="trendingSection" class="mb-12">
             <div class="border-t border-neutral-800 mb-6"></div>
             <div class="flex items-end justify-between mb-4">
@@ -77,7 +73,6 @@
             </div>
         </section>
 
-        <!-- All Movies Section -->
         <div class="border-t border-neutral-800 my-10"></div>
         <section>
             <div class="flex items-end justify-between mb-4">

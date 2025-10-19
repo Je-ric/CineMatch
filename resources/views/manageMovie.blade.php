@@ -142,6 +142,7 @@
                     </div>
                 </details>
 
+                {{--  --}}
                 <details class="accordion-section border-b border-slate-600">
                     <summary
                         class="bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 cursor-pointer p-6 flex items-center gap-3 text-lg font-semibold text-white transition-all duration-300">
@@ -196,7 +197,7 @@
                     </div>
                 </details>
 
-                <!-- Casts  -->
+                {{--  --}}
                 <details class="accordion-section border-b border-slate-600">
                     <summary
                         class="bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 cursor-pointer p-6 flex items-center gap-3 text-lg font-semibold text-white transition-all duration-300">
@@ -237,7 +238,7 @@
                     </div>
                 </details>
 
-
+                {{--  --}}
                 <details class="accordion-section">
                     <summary
                         class="bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 cursor-pointer p-6 flex items-center gap-3 text-lg font-semibold text-white transition-all duration-300">

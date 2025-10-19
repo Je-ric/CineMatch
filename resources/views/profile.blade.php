@@ -36,6 +36,7 @@
                 Recommendations
             </button>
         </div>
+
         {{-- Tab Contents --}}
         <div id="favorites" class="tab-content">
             <div class="mb-6 space-y-2">
@@ -127,28 +128,25 @@
     </div>
 
     @push('scripts')
+    {{-- W3Schools --}}
         <script>
             function openTab(evt, tabName) {
                 var i, tabContent, tabLinks;
 
-                // Hide all tab contents
                 tabContent = document.getElementsByClassName("tab-content");
                 for (i = 0; i < tabContent.length; i++) {
                     tabContent[i].style.display = "none";
                 }
 
-                // Remove active-tab class from all buttons
                 tabLinks = document.getElementsByClassName("tab-link");
                 for (i = 0; i < tabLinks.length; i++) {
                     tabLinks[i].classList.remove("active-tab");
                 }
 
-                // Show selected tab and add active class
                 document.getElementById(tabName).style.display = "block";
                 evt.currentTarget.classList.add("active-tab");
             }
 
-            // Show first tab on page load
             document.addEventListener("DOMContentLoaded", function() {
                 document.getElementsByClassName("tab-link")[0].click();
             });

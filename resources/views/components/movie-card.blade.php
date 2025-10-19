@@ -41,7 +41,6 @@
         </h5>
 
         <div class="text-gray-400 text-xs flex flex-wrap gap-2 mb-3">
-            {{-- No controller logic here — controller should set country_name & language_name --}}
             <span class="px-2 py-0.5 rounded bg-neutral-800/70 border border-neutral-700">
                 {{ $movie->country_name ?? '' }}
             </span>

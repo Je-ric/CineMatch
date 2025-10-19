@@ -21,5 +21,4 @@
     </button>
 @endif
 
-{{-- Include the modal --}}
 <x-review-modal :movie="$movie" :user-review="$userReview" :is-logged-in="$isLoggedIn" />

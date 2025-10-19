@@ -81,7 +81,7 @@
                             </div>
                         </div>
 
-                        {{-- Right: Rating Summary --}}
+                        {{-- Rating Summary --}}
                         <div class="text-center flex flex-col items-center justify-center space-y-2">
                             @if (auth()->check())
                                 <x-review-section
@@ -131,7 +131,7 @@
         </div>
     </section>
 
-    {{-- Related Movies --}}
+    {{-- Related --}}
     <section class="relative z-10 max-w-7xl mx-auto px-4 pb-16">
         <div class="flex items-end justify-between mb-4">
             <h2 class="text-2xl md:text-3xl font-bold text-accent">
