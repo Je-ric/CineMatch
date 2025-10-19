@@ -80,38 +80,38 @@ class MovieController extends Controller
     {
         $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($id);
 
-        if (!$movie) {
-            $movie = (object)[
-                'id' => 0,
-                'title' => 'Movie not found',
-                'description' => 'This movie does not exist yet. Add real data in the admin panel.',
-                'release_year' => null,
-                'poster_url' => asset('images/placeholders/sample1.jpg'),
-                'background_url' => asset('images/placeholders/background.jpg'),
-                'trailer_url' => null,
-                'genres' => collect([]),
-                'country' => (object)['name' => 'Unknown'],
-                'language' => (object)['name' => 'Unknown'],
-                'cast' => collect([]),
-            ];
+        // if (!$movie) {
+        //     $movie = (object)[
+        //         'id' => 0,
+        //         'title' => 'Movie not found',
+        //         'description' => 'This movie does not exist yet. Add real data in the admin panel.',
+        //         'release_year' => null,
+        //         'poster_url' => asset('images/placeholders/sample1.jpg'),
+        //         'background_url' => asset('images/placeholders/background.jpg'),
+        //         'trailer_url' => null,
+        //         'genres' => collect([]),
+        //         'country' => (object)['name' => 'Unknown'],
+        //         'language' => (object)['name' => 'Unknown'],
+        //         'cast' => collect([]),
+        //     ];
 
-            $genres = [];
-            $directors = collect([]);
-            $actors = collect([]);
-            $reviews = collect();
-            $related = collect([(object)[
-                'id' => 0,
-                'title' => 'No related movies found',
-                'poster_url' => asset('images/placeholders/no_related.jpg'),
-                'release_year' => null,
-                'avg_rating' => null,
-                'country_name' => null,
-                'language_name' => null,
-            ]]);
+        //     $genres = [];
+        //     $directors = collect([]);
+        //     $actors = collect([]);
+        //     $reviews = collect();
+        //     $related = collect([(object)[
+        //         'id' => 0,
+        //         'title' => 'No related movies found',
+        //         'poster_url' => asset('images/placeholders/no_related.jpg'),
+        //         'release_year' => null,
+        //         'avg_rating' => null,
+        //         'country_name' => null,
+        //         'language_name' => null,
+        //     ]]);
 
-            return view('viewMovie', compact('movie', 'reviews', 'related', 'genres', 'directors', 'actors'))
-                ->with(['realReviewCount' => 0, 'avgRating' => null]);
-        }
+        //     return view('viewMovie', compact('movie', 'reviews', 'related', 'genres', 'directors', 'actors'))
+        //         ->with(['realReviewCount' => 0, 'avgRating' => null]);
+        // }
 
         // Derived attributes
         $movie->country_name = $movie->country->name ?? 'Unknown';
@@ -134,19 +134,31 @@ class MovieController extends Controller
         $realReviewCount = $reviews->count();
         $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
 
-        // Related movies (same genre)
-        $related = Movie::with(['genres', 'country', 'language', 'ratings'])
-            ->get()
-            ->reject(fn($m) => $m->id === $movie->id)
-            ->filter(fn($m) => $m->genres->pluck('id')->intersect($movie->genres->pluck('id'))->isNotEmpty())
-            ->take(6)
-            ->map(function ($m) {
-                $m->country_name = $m->country->name ?? 'Unknown';
-                $m->language_name = $m->language->name ?? 'Unknown';
-                $m->avg_rating = round($m->ratings->avg('rating') ?? 0, 1);
-                return $m;
-            })
-            ->values();
+        // Related movies (same genre) — improved: query only movies that share genres,
+        // compute match count and sort by match count, avg rating, then release_year
+        $genreIds = $movie->genres->pluck('id')->toArray();
+
+        $related = collect();
+        if (!empty($genreIds)) {
+            $related = Movie::with(['genres', 'country', 'language', 'ratings'])
+                ->where('id', '!=', $movie->id)
+                ->whereHas('genres', function ($q) use ($genreIds) {
+                    $q->whereIn('genres.id', $genreIds);
+                })
+                ->get()
+                ->map(function ($m) use ($genreIds) {
+                    // count how many genres match
+                    $m->match_genres = $m->genres->pluck('id')->intersect($genreIds)->count();
+                    $m->avg_rating = $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : null;
+                    $m->country_name = $m->country->name ?? 'Unknown';
+                    $m->language_name = $m->language->name ?? 'Unknown';
+                    return $m;
+                })
+                ->filter(fn($m) => $m->match_genres > 0)
+                ->sortByDesc(fn($m) => [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0])
+                ->take(5)
+                ->values();
+        }
 
         return view('viewMovie', [
             'movie' => $movie,
