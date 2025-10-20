@@ -41,67 +41,27 @@ class MovieController extends Controller
         ));
     }
 
-
     public function show($id)
     {
-        $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($id);
+        $movie = MovieHelper::getMovieWithDetails($id);
 
-        // Derived attributes
-        $movie->country_name = $movie->country->name ?? 'Unknown';
-        $movie->language_name = $movie->language->name ?? 'Unknown';
-        $genres = $movie->genres->pluck('name')->toArray();
-
-        // Split cast
-        $directors = $movie->cast->filter(
-            fn($p) =>
-            strcasecmp($p->pivot->role ?? '', 'Director') === 0
-        )->values();
-
-        $actors = $movie->cast->filter(
-            fn($p) =>
-            strcasecmp($p->pivot->role ?? '', 'Cast') === 0
-        )->values();
-
-        // Reviews
-        $reviews = $movie->ratings()->with('user')->latest()->get();
-        $realReviewCount = $reviews->count();
-        $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
-
-        // Related movies (same genre) — improved: query only movies that share genres,
-        // compute match count and sort by match count, avg rating, then release_year
-        $genreIds = $movie->genres->pluck('id')->toArray();
-
-        $related = collect();
-        if (!empty($genreIds)) {
-            $related = Movie::with(['genres', 'country', 'language', 'ratings'])
-                ->where('id', '!=', $movie->id)
-                ->whereHas('genres', function ($q) use ($genreIds) {
-                    $q->whereIn('genres.id', $genreIds);
-                })
-                ->get()
-                ->map(function ($m) use ($genreIds) {
-                    // count how many genres match
-                    $m->match_genres = $m->genres->pluck('id')->intersect($genreIds)->count();
-                    $m->avg_rating = $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : null;
-                    $m->country_name = $m->country->name ?? 'Unknown';
-                    $m->language_name = $m->language->name ?? 'Unknown';
-                    return $m;
-                })
-                ->filter(fn($m) => $m->match_genres > 0)
-                ->sortByDesc(fn($m) => [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0])
-                ->take(5)
-                ->values();
+        if (!$movie) {
+            abort(404, 'Movie not found.');
         }
+
+        $reviews = MovieHelper::getMovieReviews($id);
+        $related = MovieHelper::getRelatedMovies($movie);
+        $castData = MovieHelper::splitCastRoles($movie);
 
         return view('viewMovie', [
             'movie' => $movie,
-            'reviews' => $reviews,
-            'realReviewCount' => $realReviewCount,
-            'avgRating' => $avgRating,
+            'reviews' => $reviews['list'],
+            'realReviewCount' => $reviews['count'],
+            'avgRating' => $reviews['average'],
             'relatedMovies' => $related,
-            'genres' => $genres,
-            'directors' => $directors,
-            'actors' => $actors,
+            'genres' => $movie->genres->pluck('name')->toArray(),
+            'directors' => $castData['directors'],
+            'actors' => $castData['actors'],
         ]);
     }
 
