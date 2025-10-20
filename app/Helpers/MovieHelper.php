@@ -38,13 +38,21 @@ class MovieHelper
             ->limit($limit)
             ->pluck('movie_id');
 
-        // ORM for relationships and transformations
+        // ORM for relationships 
         return Movie::with(['genres', 'ratings'])
-            ->whereIn('id', $ratedIds)
+            ->whereIn('id', $ratedIds) // only movies rated by user
+            // ->orderBy('title', 'asc') // pero kung gusto lang is by title, no need for the sorting below
+            // ->get();
             ->get()
-            ->sortByDesc(function ($m) use ($userId) {
-                return optional($m->ratings->where('user_id', $userId)->first())->created_at;
-            })
+                ->sortByDesc(function ($m) use ($userId) { // naging complicated lang because of sorting
+                    return optional(                                             
+                        $m                                                // movie             
+                                ->ratings                                        // get ratings
+                                ->where('user_id', $userId)    // by the user id
+                                ->first())                                       // get the first and usually only rating
+                                ->created_at;                                    // sort
+            })          
+
             ->values();
     }
 
@@ -52,7 +60,8 @@ class MovieHelper
     public static function getTrendingMovies($limit = 5)
     {
         $topIds = DB::table('ratings_reviews')
-            ->select('movie_id', DB::raw('COUNT(*) as total_reviews'))
+            ->select('movie_id', DB::raw('AVG(rating) as avg_rating'))
+            // ->select('movie_id', DB::raw('COUNT(*) as total_reviews'))
             ->groupBy('movie_id')
             ->orderByDesc('total_reviews')
             ->limit($limit)
@@ -97,8 +106,6 @@ class MovieHelper
 
         return $relatedMovies;
     }
-
-
 
 
     // viewMovie.php
