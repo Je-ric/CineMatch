@@ -1,0 +1,130 @@
+<?php
+
+namespace App\Helpers;
+
+use App\Models\Movie;
+use App\Models\Genre;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\MovieHelper; 
+
+class RecommendHelper
+{
+    public static function basedOnFavoriteGenres(int $userId, int $limit = 12)
+    {
+        if (!$userId) return collect();
+
+        // Top genres from favorites 
+        $topGenreIds = DB::table('movie_genre')
+            ->join('user_favorites', 'movie_genre.movie_id', '=', 'user_favorites.movie_id')
+            ->where('user_favorites.user_id', $userId)
+            ->select('movie_genre.genre_id', DB::raw('COUNT(*) as fav_count'))
+            ->groupBy('movie_genre.genre_id')
+            ->orderByDesc('fav_count')
+            ->limit(5)
+            ->pluck('genre_id');
+
+        if ($topGenreIds->isEmpty()) return collect();
+
+        // ORM for related movies
+        $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
+            ->whereHas('genres', fn($q) => $q->whereIn('genres.id', $topGenreIds))
+            ->whereDoesntHave('favoritedBy', fn($q) => $q->where('user_id', $userId))
+            ->get()
+            ->map(function ($m) use ($topGenreIds) {
+                $m->match_genres = $m->genres->pluck('id')->intersect($topGenreIds)->count();
+                $m->avg_rating = $m->ratings->avg('rating') ? round($m->ratings->avg('rating'), 1) : 0;
+                return $m;
+            })
+            ->sortByDesc(fn($m) => [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0])
+            ->take($limit)
+            ->values();
+
+        return MovieHelper::formatMovies($movies);
+    }
+
+
+    // Get top genres from user's rated movies
+    public static function getTopGenresFromRatings(int $userId, int $limit = 5)
+    {
+        return Genre::withCount([
+            'movies as rated_count' => fn($q) => $q->whereHas('ratings', fn($r) => $r->where('user_id', $userId))
+        ])
+            ->having('rated_count', '>', 0)
+            ->orderByDesc('rated_count')
+            ->limit($limit)
+            ->get();
+    }
+
+    
+    //Get top genres from user's favorites
+    public static function getTopGenresFromFavorites(int $userId, int $limit = 5)
+    {
+        return Genre::withCount([
+            'movies as fav_count' => fn($q) => $q->whereHas('favoritedBy', fn($f) => $f->where('user_id', $userId))
+        ])
+            ->having('fav_count', '>', 0)
+            ->orderByDesc('fav_count')
+            ->limit($limit)
+            ->get();
+    }
+
+    
+    // Build genre shelves for a user.
+    // Returns array of shelves: ['genre' => Genre, 'movies' => Collection]
+    
+    public static function getGenreShelvesForUser(int $userId, string $source = 'favorites', int $topLimit = 5, int $perGenre = 5)
+    {
+        if (!$userId) return [];
+
+        $topGenres = $source === 'rated'
+            ? self::getTopGenresFromRatings($userId, $topLimit)
+            : self::getTopGenresFromFavorites($userId, $topLimit);
+
+        if ($topGenres->isEmpty()) return [];
+
+        $shelves = $topGenres->map(function ($genre) use ($userId, $perGenre) {
+            $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
+                ->whereHas('genres', fn($q) => $q->where('genres.id', $genre->id))
+                ->whereDoesntHave('favoritedBy', fn($q) => $q->where('user_id', $userId))
+                ->limit($perGenre)
+                ->get();
+
+            return [
+                'genre' => $genre,
+                'movies' => MovieHelper::formatMovies($movies),
+            ];
+        })->filter(fn($shelf) => $shelf['movies']->isNotEmpty())
+        ->values();
+
+        return $shelves;
+    }
+
+    //Count of user’s favorite movies per genre
+    public static function getFavCountsByGenre(int $userId)
+    {
+        return Genre::withCount([
+            'movies as cnt' => fn($q) => $q->whereHas('favoritedBy', fn($f) => $f->where('user_id', $userId))
+        ])
+            ->having('cnt', '>', 0)
+            ->orderByDesc('cnt')
+            ->get()
+            ->map(fn($g) => (object) ['id' => $g->id, 'name' => $g->name, 'cnt' => (int) $g->cnt])
+            ->values();
+    }
+
+    
+    // Count of user’s rated movies per genre
+    
+    public static function getRatedCountsByGenre(int $userId)
+    {
+        return Genre::withCount([
+            'movies as cnt' => fn($q) => $q->whereHas('ratings', fn($r) => $r->where('user_id', $userId))
+        ])
+            ->having('cnt', '>', 0)
+            ->orderByDesc('cnt')
+            ->get()
+            ->map(fn($g) => (object) ['id' => $g->id, 'name' => $g->name, 'cnt' => (int) $g->cnt])
+            ->values();
+    }
+}

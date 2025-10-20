@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\RatingReview;
 class MovieHelper
 {
+    // profile.php
     public static function getUserFavorites($userId = null, $limit = 12)
     {
         $userId = $userId ?? Auth::id();
@@ -25,6 +26,7 @@ class MovieHelper
             ->get();
     }
 
+    // profile.php
     public static function getUserRatedMovies($userId = null, $limit = 12)
     {
         $userId = $userId ?? Auth::id();
@@ -46,6 +48,7 @@ class MovieHelper
             ->values();
     }
 
+    // home.php
     public static function getTrendingMovies($limit = 5)
     {
         $topIds = DB::table('ratings_reviews')
@@ -61,51 +64,7 @@ class MovieHelper
             ->get();
     }
 
-
-
-
-    public static function getMovieWithDetails($movieId)
-    {
-        $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($movieId);
-
-        if (!$movie) return null;
-
-        $movie->country_name = $movie->country->name ?? 'Unknown';
-        $movie->language_name = $movie->language->name ?? 'Unknown';
-
-        return $movie;
-    }
-
-    public static function getMovieReviews($movieId)
-    {
-        // all reviews
-        $reviews = DB::table('ratings_reviews')
-            ->where('movie_id', $movieId)
-            ->orderByDesc('created_at')
-            ->get();
-
-        $count = $reviews->count();
-        $average = $count ? round($reviews->avg('rating'), 1) : null;
-
-        $reviewModels = RatingReview::with('user')
-            ->where('movie_id', $movieId)
-            ->latest()
-            ->get();
-
-        return [
-            'list' => $reviewModels,
-            'count' => $count,
-            'average' => $average,
-        ];
-    }
-    public static function splitCastRoles($movie)
-    {
-        $directors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Director') === 0)->values();
-        $actors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Cast') === 0)->values();
-
-        return compact('directors', 'actors');
-    }
-
+    // viewMovie.php
     public static function getRelatedMovies($movie)
     {
         $genreIds = $movie->genres->pluck('id')->toArray();
@@ -142,27 +101,81 @@ class MovieHelper
 
 
 
-
-
+    // viewMovie.php
+    // home.php
+    // profile.php
     public static function formatMovies($movies)
     {
         return $movies->map(function ($m) {
             $totalReviews = $m->ratings->count();
-            $avg = $totalReviews ? round($m->ratings->avg('rating'), 1) : 0;
+            $avg = $totalReviews ? round($m->ratings->avg('rating'), 1) : null;
 
-            return [
-                'id' => $m->id,
-                'title' => $m->title ?? 'Untitled',
-                'release_year' => $m->release_year,
-                'poster_url' => $m->poster_url ?? asset('images/placeholders/sample.jpg'),
-                'avg_rating' => $avg,
-                'total_reviews' => $totalReviews,
-                'country_name' => optional($m->country)->name ?? 'Unknown',
-                'language_name' => optional($m->language)->name ?? 'Unknown',
-                'genres' => $m->genres->map(fn($g) => ['id' => $g->id, 'name' => $g->name])->toArray(),
-                'genre_ids' => $m->genres->pluck('id')->implode(','),
-            ];
+            $m->avg_rating = $avg;
+            $m->total_reviews = $totalReviews;
+            $m->country_name = optional($m->country)->name ?? 'Unknown';
+            $m->language_name = optional($m->language)->name ?? 'Unknown';
+            $m->genres_list = $m->genres->map(fn($g) => ['id' => $g->id, 'name' => $g->name])->toArray();
+            $m->genre_ids = $m->genres->pluck('id')->implode(',');
+
+            $poster = $m->poster_url ?? null;
+            if ($poster && !preg_match('/^https?:\/\//', $poster)) {
+                $poster = asset($poster);
+            }
+            $m->poster_url = $poster ?: asset('images/placeholders/sample.jpg');
+
+            return $m;
         });
     }
+
+
+    // viewMovie.php
+    // used in MovieController@show
+    public static function getMovieWithDetails($movieId)
+    {
+        $movie = Movie::with(['genres', 'country', 'language', 'cast', 'ratings'])->find($movieId);
+
+        if (!$movie) return null;
+
+        $movie->country_name = $movie->country->name ?? 'Unknown';
+        $movie->language_name = $movie->language->name ?? 'Unknown';
+
+        return $movie;
+    }
+
+    // viewMovie.php
+    // used in MovieController@show
+    public static function getMovieReviews($movieId)
+    {
+        // all reviews
+        $reviews = DB::table('ratings_reviews')
+            ->where('movie_id', $movieId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $count = $reviews->count();
+        $average = $count ? round($reviews->avg('rating'), 1) : null;
+
+        $reviewModels = RatingReview::with('user')
+            ->where('movie_id', $movieId)
+            ->latest()
+            ->get();
+
+        return [
+            'list' => $reviewModels,
+            'count' => $count,
+            'average' => $average,
+        ];
+    }
+
+    // viewMovie.php
+    // used in MovieController@show
+    public static function splitCastRoles($movie)
+    {
+        $directors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Director') === 0)->values();
+        $actors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Cast') === 0)->values();
+
+        return compact('directors', 'actors');
+    }
+
 
 }
