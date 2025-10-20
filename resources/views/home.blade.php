@@ -3,62 +3,72 @@
 @section('page-content')
     <div class="px-6 md:px-10 py-10">
 
-        <div class="mb-8 items-start md:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
-                <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
-            </div>
+        <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <!-- Left: Title and Subtitle -->
+    <div>
+        <h2 class="text-3xl font-bold mb-1">Discover Movies</h2>
+        <p class="text-gray-400 text-sm">Find your next favorite film from our curated collection</p>
+    </div>
 
-            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto items-center">
+    <!-- Right: Filters -->
+    <div
+        class="flex flex-col sm:flex-row flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto">
 
-                <div
-                    class="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm w-full md:w-96 h-10">
-                    <span class="px-3"><i class="bx bx-search text-gray-400 text-lg"></i></span>
-                    <input id="search" type="text" placeholder="Search movies by title..."
-                        class="w-full h-full bg-neutral-900 text-gray-200 placeholder-gray-500 focus:outline-none px-2 text-sm">
-                </div>
-
-                <select id="sortSelect"
-                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3">
-                    <option value="year_desc">Sort: Year (New → Old)</option>
-                    <option value="year_asc">Sort: Year (Old → New)</option>
-                    <option value="title_asc">Sort: Title (A→Z)</option>
-                    <option value="title_desc">Sort: Title (Z→A)</option>
-                </select>
-
-                <select id="genreFilter"
-                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[10rem]">
-                    <option value="">All Genres</option>
-                    @foreach ($availableGenres ?? [] as $genre)
-                        <option value="{{ strtolower($genre) }}">{{ $genre }}</option>
-                    @endforeach
-                </select>
-
-                <select id="yearFilter"
-                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[7rem]">
-                    <option value="">All Years</option>
-                    @foreach ($availableYears ?? [] as $year)
-                        <option value="{{ $year }}">{{ $year }}</option>
-                    @endforeach
-                </select>
-
-                <select id="countryFilter"
-                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
-                    <option value="">All Countries</option>
-                    @foreach ($availableCountries ?? [] as $country)
-                        <option value="{{ strtolower($country) }}">{{ $country }}</option>
-                    @endforeach
-                </select>
-
-                <select id="languageFilter"
-                    class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
-                    <option value="">All Languages</option>
-                    @foreach ($availableLanguages ?? [] as $lang)
-                        <option value="{{ strtolower($lang) }}">{{ $lang }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <!-- Search -->
+        <div
+            class="flex items-center bg-neutral-900 border border-neutral-700 rounded-lg overflow-hidden shadow-sm w-full sm:w-64 md:w-80 h-10">
+            <span class="px-3"><i class="bx bx-search text-gray-400 text-lg"></i></span>
+            <input id="search" type="text" placeholder="Search movies by title..."
+                class="w-full h-full bg-neutral-900 text-gray-200 placeholder-gray-500 focus:outline-none px-2 text-sm">
         </div>
+
+        <!-- Sort -->
+        <select id="sortSelect"
+            class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[10rem]">
+            <option value="year_desc">Sort: Year (New → Old)</option>
+            <option value="year_asc">Sort: Year (Old → New)</option>
+            <option value="title_asc">Sort: Title (A→Z)</option>
+            <option value="title_desc">Sort: Title (Z→A)</option>
+        </select>
+
+        <!-- Genre -->
+        <select id="genreFilter"
+            class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[10rem]">
+            <option value="">All Genres</option>
+            @foreach ($availableGenres ?? [] as $genre)
+                <option value="{{ strtolower($genre) }}">{{ $genre }}</option>
+            @endforeach
+        </select>
+
+        <!-- Year -->
+        <select id="yearFilter"
+            class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[7rem]">
+            <option value="">All Years</option>
+            @foreach ($availableYears ?? [] as $year)
+                <option value="{{ $year }}">{{ $year }}</option>
+            @endforeach
+        </select>
+
+        <!-- Country -->
+        <select id="countryFilter"
+            class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
+            <option value="">All Countries</option>
+            @foreach ($availableCountries ?? [] as $country)
+                <option value="{{ strtolower($country) }}">{{ $country }}</option>
+            @endforeach
+        </select>
+
+        <!-- Language -->
+        <select id="languageFilter"
+            class="h-10 rounded-lg bg-neutral-900 border border-neutral-700 text-gray-200 text-sm px-3 min-w-[9rem]">
+            <option value="">All Languages</option>
+            @foreach ($availableLanguages ?? [] as $lang)
+                <option value="{{ strtolower($lang) }}">{{ $lang }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+
 
 
         <section id="trendingSection" class="mb-12">
