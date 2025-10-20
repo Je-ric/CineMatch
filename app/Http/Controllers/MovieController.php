@@ -103,7 +103,6 @@ class MovieController extends Controller
         $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
         $languageId = $this->findOrCreateLanguageFromJson($validated['languageName']);
 
-        // Defensive transaction + explicit save
         DB::beginTransaction();
         try {
             $movie = new Movie([
@@ -195,7 +194,6 @@ class MovieController extends Controller
             'language_id' => $languageId,
         ]);
 
-        // ✅ Only now sync genres
         if (!empty($validated['genres'])) {
             $movie->genres()->sync($validated['genres']);
         } else {
