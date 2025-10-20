@@ -12,58 +12,33 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\MovieHelper;
 
 class MovieController extends Controller
 {
 
     public function index()
     {
-        // Get all movies with relations
         $movies = Movie::with(['genres', 'ratings', 'country', 'language'])->get();
 
-        // Transform for frontend
-        $moviesJson = $movies->map(function ($m) {
-            $avg = $m->ratings->avg('rating');
-            return [
-                'id' => $m->id,
-                'title' => $m->title ?? 'Untitled',
-                'release_year' => $m->release_year,
-                'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
-                'avg_rating' => $avg ? round($avg, 1) : null,
-                'country_name' => $m->country?->name ?? 'Unknown',
-                'language_name' => $m->language?->name ?? 'Unknown',
-                'genre_ids' => $m->genres->pluck('id')->implode(','),
-                'genres' => $m->genres->map(fn($g) => ['id'=>$g->id, 'name'=>$g->name])->toArray(),
-            ];
-        })->toArray();
+        $moviesJson = MovieHelper::formatMovies($movies)->toArray();
 
-        // Trending movies (top 6 by avg rating)
-        $trending = $movies->map(function ($m) {
-            $m->avg_rating = $m->ratings->avg('rating') ? round($m->ratings->avg('rating'), 1) : 0;
-            return $m;
-        })->sortByDesc('avg_rating')->take(6);
+        $trending = MovieHelper::getTrendingMovies(6);
+        $trendingJson = MovieHelper::formatMovies($trending)->toArray();
 
-        $trendingJson = $trending->map(function ($m) {
-            return [
-                'id' => $m->id,
-                'title' => $m->title,
-                'poster_url' => $m->poster_url ?? asset('images/placeholders/sample1.jpg'),
-                'release_year' => $m->release_year,
-                'avg_rating' => $m->avg_rating ?: null,
-                'country_name' => $m->country?->name ?? 'Unknown',
-                'language_name' => $m->language?->name ?? 'Unknown',
-                'genre_ids' => $m->genres->pluck('id')->implode(','),
-                'genres' => $m->genres->map(fn($g) => ['id'=>$g->id, 'name'=>$g->name])->toArray(),
-            ];
-        })->values()->toArray();
-
-        //  data from DB
         $availableYears = $movies->pluck('release_year')->filter()->unique()->sortDesc()->values()->toArray();
-        $availableCountries = $movies->pluck('country.name')->filter()->unique()->map(fn($c)=>trim($c))->sort()->values()->toArray();
-        $availableLanguages = $movies->pluck('language.name')->filter()->unique()->map(fn($l)=>trim($l))->sort()->values()->toArray();
+        $availableCountries = $movies->pluck('country.name')->filter()->unique()->map(fn($c) => trim($c))->sort()->values()->toArray();
+        $availableLanguages = $movies->pluck('language.name')->filter()->unique()->map(fn($l) => trim($l))->sort()->values()->toArray();
         $availableGenres = Genre::orderBy('name')->pluck('name')->map(fn($g) => trim($g))->values()->toArray();
 
-        return view('home', compact('moviesJson', 'trendingJson', 'availableYears', 'availableCountries', 'availableLanguages', 'availableGenres'));
+        return view('home', compact(
+            'moviesJson',
+            'trendingJson',
+            'availableYears',
+            'availableCountries',
+            'availableLanguages',
+            'availableGenres'
+        ));
     }
 
 

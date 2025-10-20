@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\Genre;
 use App\Http\Controllers\RecommendController;
+use App\Helpers\MovieHelper;
 
 class ProfileController extends Controller
 {
@@ -42,18 +43,7 @@ class ProfileController extends Controller
         $favModels = $recommend->getFavorites($user->id); // Collection
 
         // shape for view (keep minimal object form)
-        $favorites = $favModels->map(function($m) {
-            return (object)[
-                'id' => $m->id,
-                'title' => $m->title,
-                'release_year' => $m->release_year,
-                'poster_url' => $m->poster_url ? asset($m->poster_url) : null,
-                'avg_rating' => $m->avg_rating ?? ($m->ratings->count() ? round($m->ratings->avg('rating'), 1) : 0),
-                'country_name' => optional($m->country)->name ?? 'Unknown',
-                'language_name' => optional($m->language)->name ?? 'Unknown',
-                'genre_ids' => $m->genres->pluck('id')->implode(','),
-            ];
-        });
+        $favorites = MovieHelper::formatMovies($favModels);
 
         // same here
         $favGenres = $recommend->getFavCountsByGenre($user->id)->toArray();
@@ -77,18 +67,7 @@ class ProfileController extends Controller
         // may retrieval sa RecommendController
         $ratedModels = $recommend->getRated($user->id); // Collection of formatted movies
 
-        $rated = $ratedModels->map(function($m) {
-            return (object)[
-                'id' => $m->id,
-                'title' => $m->title,
-                'release_year' => $m->release_year,
-                'poster_url' => $m->poster_url ? asset($m->poster_url) : null,
-                'avg_rating' => $m->avg_rating ?? ($m->ratings->count() ? round($m->ratings->avg('rating'), 1) : null),
-                'country_name' => optional($m->country)->name,
-                'language_name' => optional($m->language)->name,
-                'genre_ids' => $m->genres->pluck('id')->implode(','),
-            ];
-        });
+        $rated = MovieHelper::formatMovies($ratedModels);
 
         // same here
         $ratedGenres = $recommend->getRatedCountsByGenre($user->id)->toArray();
