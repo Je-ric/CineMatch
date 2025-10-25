@@ -73,7 +73,11 @@ class Movie extends Model
 
     public function ratings()
     {
-        return $this->hasMany(RatingReview::class, 'movie_id', 'id');
+        return $this->hasMany(
+                RatingReview::class, 
+                        'movie_id', 
+                        'id'
+                );
     }
 
     public function favoritedBy()
@@ -87,6 +91,19 @@ class Movie extends Model
     }
 
     // --- Accessors ---
+    // When we do $movie->poster_url
+    // Laravel first gets the raw value of poster_url from the database row.
+    // Each movie has a unique poster path
+
+    // $movie = Movie::find(1);
+    //  [
+    //     'id' => 1,
+    //     'title' => 'Avengers',
+    //     'poster_url' => 'uploads/posters/avengers.jpg'
+    // ]
+    // The database knows which poster belongs to the movie
+    // $movie->poster_url == getPosterUrlAttribute($value), same to the other accessor
+
     public function getPosterUrlAttribute($value)
     {
         if (empty($value)) {

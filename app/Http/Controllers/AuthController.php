@@ -11,7 +11,6 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    // ---------- REGISTER / LOGIN / LOGOUT ----------
     public function register(Request $request)
     {
         $request->validate([
