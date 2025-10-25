@@ -88,24 +88,41 @@ class AuthController extends Controller
             \Log::error('Google login failed: ' . $e->getMessage());
             return redirect()->route('auth')->withErrors(['google' => 'Failed to login with Google. Please try again.']);
         }
-}
+    }
 
 
     // ---------- FACEBOOK ----------
     public function redirectFacebook()
     {
-        return Socialite::driver('facebook')->scopes(['public_profile', 'email'])->redirect();
+        return Socialite::driver('facebook')
+            ->stateless()
+            ->scopes(['public_profile', 'email'])
+            ->with(['auth_type' => 'rerequest']) // Forces re-asking permissions if email missing
+            ->redirect();
     }
 
     public function handleFacebookCallback()
     {
         try {
             $socialUser = Socialite::driver('facebook')->stateless()->user();
+
+            \Log::info('Facebook social user:', [
+                'id' => $socialUser->getId(),
+                'name' => $socialUser->getName(),
+                'email' => $socialUser->getEmail(),
+                'token' => $socialUser->token,
+            ]);
+
             $user = $this->findOrCreateSocialUser($socialUser, 'facebook');
+
             Auth::login($user);
+
             return redirect()->route('home');
         } catch (\Exception $e) {
-            return redirect()->route('auth')->withErrors(['facebook' => $e->getMessage()]);
+            \Log::error('Facebook login failed: ' . $e->getMessage());
+            return redirect()->route('auth')->withErrors([
+                'facebook' => 'Failed to login with Facebook. Please try again.',
+            ]);
         }
     }
 
@@ -129,9 +146,22 @@ class AuthController extends Controller
 
     private function findOrCreateSocialUser($socialUser, $provider)
     {
-        $username = $this->generateUsername($socialUser);
-        $randomPassword = bcrypt(Str::random(16)); // hindi kase nullable
+        // Try to find by email first
+        $user = User::where('email', $socialUser->getEmail())->first();
 
+        if ($user) {
+            // Update existing record with provider info
+            $user->update([
+                'provider_id' => $socialUser->getId(),
+                'provider_name' => $provider,
+                'provider_token' => $socialUser->token ?? null,
+                'provider_refresh_token' => $socialUser->refreshToken ?? null,
+            ]);
+
+            return $user;
+        }
+
+        // Otherwise, find by provider or create new
         return User::updateOrCreate(
             [
                 'provider_id' => $socialUser->getId(),
@@ -140,14 +170,15 @@ class AuthController extends Controller
             [
                 'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
                 'email' => $socialUser->getEmail() ?? ($socialUser->getId() . '@' . $provider . '.local'),
-                'username' => $username,
-                'password' => $randomPassword, 
+                'username' => $this->generateUsername($socialUser),
+                'password' => bcrypt(Str::random(16)),
                 'provider_token' => $socialUser->token ?? null,
                 'provider_refresh_token' => $socialUser->refreshToken ?? null,
                 'role' => 'user',
             ]
         );
     }
+
 
 
     private function generateUsername($socialUser)
