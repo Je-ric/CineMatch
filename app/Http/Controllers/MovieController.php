@@ -205,8 +205,6 @@ class MovieController extends Controller
     }
 
 
-
-
     // Delete a movie and clean up files and pivots
     public function destroy($id)
     {

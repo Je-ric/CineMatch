@@ -1,17 +1,19 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-
+    // ---------- REGISTER / LOGIN / LOGOUT ----------
     public function register(Request $request)
     {
-
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -19,8 +21,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        // Create a new user (provide required name & email to satisfy at magmatch sa DB)
-        $user = User::create([
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'role' => 'user',
@@ -40,7 +41,6 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            // redirect to named home route (root). Avoid redirecting to a literal '/home' path.
             return redirect()->intended(route('home'));
         }
 
@@ -56,5 +56,118 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    // ---------- GOOGLE ----------
+    public function redirectGoogle()
+    {
+        // Forces Google to show account chooser every time
+        return Socialite::driver('google')
+            ->stateless()
+            ->with(['prompt' => 'select_account'])
+            ->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            $socialUser = Socialite::driver('google')->stateless()->user();
+
+            \Log::info('Google social user:', [
+                'id' => $socialUser->getId(),
+                'name' => $socialUser->getName(),
+                'email' => $socialUser->getEmail(),
+                'token' => $socialUser->token,
+            ]);
+
+            $user = $this->findOrCreateSocialUser($socialUser, 'google');
+
+            Auth::login($user);
+
+            return redirect()->route('home');
+        } catch (\Exception $e) {
+            \Log::error('Google login failed: ' . $e->getMessage());
+            return redirect()->route('auth')->withErrors(['google' => 'Failed to login with Google. Please try again.']);
+        }
+}
+
+
+    // ---------- FACEBOOK ----------
+    public function redirectFacebook()
+    {
+        return Socialite::driver('facebook')->scopes(['public_profile', 'email'])->redirect();
+    }
+
+    public function handleFacebookCallback()
+    {
+        try {
+            $socialUser = Socialite::driver('facebook')->stateless()->user();
+            $user = $this->findOrCreateSocialUser($socialUser, 'facebook');
+            Auth::login($user);
+            return redirect()->route('home');
+        } catch (\Exception $e) {
+            return redirect()->route('auth')->withErrors(['facebook' => $e->getMessage()]);
+        }
+    }
+
+    // ---------- GITHUB ----------
+    public function redirectGithub()
+    {
+        return Socialite::driver('github')->redirect();
+    }
+
+    public function handleGithubCallback()
+    {
+        try {
+            $socialUser = Socialite::driver('github')->stateless()->user();
+            $user = $this->findOrCreateSocialUser($socialUser, 'github');
+            Auth::login($user);
+            return redirect()->route('home');
+        } catch (\Exception $e) {
+            return redirect()->route('auth')->withErrors(['github' => $e->getMessage()]);
+        }
+    }
+
+    private function findOrCreateSocialUser($socialUser, $provider)
+    {
+        $username = $this->generateUsername($socialUser);
+        $randomPassword = bcrypt(Str::random(16)); // hindi kase nullable
+
+        return User::updateOrCreate(
+            [
+                'provider_id' => $socialUser->getId(),
+                'provider_name' => $provider,
+            ],
+            [
+                'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                'email' => $socialUser->getEmail() ?? ($socialUser->getId() . '@' . $provider . '.local'),
+                'username' => $username,
+                'password' => $randomPassword, 
+                'provider_token' => $socialUser->token ?? null,
+                'provider_refresh_token' => $socialUser->refreshToken ?? null,
+                'role' => 'user',
+            ]
+        );
+    }
+
+
+    private function generateUsername($socialUser)
+    {
+        $username = $socialUser->getNickname() ?? null;
+        if (!$username) {
+            $name = $socialUser->getName() ?? ($socialUser->getEmail() ? strstr($socialUser->getEmail(), '@', true) : $socialUser->getId());
+            $username = Str::lower(preg_replace('/\s+/', '', $name)) . '_' . rand(1000, 9999);
+        }
+
+        $username = preg_replace('/[^A-Za-z0-9]/', '', Str::lower($username));
+
+        $baseUsername = $username;
+        $count = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername . '_' . $count;
+            $count++;
+        }
+
+        return $username;
     }
 }

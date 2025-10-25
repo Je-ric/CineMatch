@@ -10,65 +10,53 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RateReviewController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Models\Movie;
-use App\Models\Genre;
 
-Route::get('/', [MovieController::class, 'index'])
-    ->name('home');
-
-// Route::get('/', function () {
-//     return view('home', ['user' => Auth::user()]);
-// })->name('home');
-
-
-//hindi ko sure if pano yung gagawin here sa login HAHAHAHAAAHAH, may error after login if hindi third party ginamit
+Route::get('/', [MovieController::class, 'index'])->name('home');
 
 Route::get('/auth', function () {
     return view('auth');
 })->name('auth');
 
-// Redirect to provider (Google/Facebook)
-Route::get('/auth/{provider}/redirect', ProviderRedirectController::class)->name('auth.redirect');
-
-// Callback from provider
-Route::get('/auth/{provider}/callback', ProviderCallbackController::class)->name('auth.callback');
-
-
-Route::post('/register', [AuthController::class, 'register'])
-    ->name('auth.register');
-
-Route::post('/login', [AuthController::class, 'login'])
-    ->name('login');
-
-Route::post('/logout', [AuthController::class, 'logout'])
-    ->name('logout');
 
 Route::get('/login', function () {
     return redirect()->route('auth');
 })->name('login.redirect');
 
 
+Route::get('/auth/google/redirect', [AuthController::class, 'redirectGoogle'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+Route::get('/auth/facebook/redirect', [AuthController::class, 'redirectFacebook'])->name('auth.facebook.redirect');
+Route::get('/auth/facebook/callback', [AuthController::class, 'handleFacebookCallback'])->name('auth.facebook.callback');
+Route::get('/auth/github/redirect', [AuthController::class, 'redirectGithub'])->name('auth.github.redirect');
+Route::get('/auth/github/callback', [AuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
+
+
+
+Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
 Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.show');
 
-// Manage Movie (Blade)
 Route::get('/movies/manage', [MovieController::class, 'create'])->name('movies.manage.create');
 Route::get('/movies/manage/{id}', [MovieController::class, 'edit'])->name('movies.manage.edit');
 
-// Movies CRUD
 Route::post('/movies', [MovieController::class, 'store'])->name('movies.store');
 Route::put('/movies/{id}', [MovieController::class, 'update'])->name('movies.update');
 Route::delete('/movies/{id}', [MovieController::class, 'destroy'])->name('movies.destroy');
 
-// People endpoints (AJAX)
 Route::post('/people/fetch', [PeopleController::class, 'fetch'])->name('people.fetch');
 Route::post('/people/add',   [PeopleController::class, 'add'])->name('people.add');
 Route::post('/people/remove',[PeopleController::class, 'remove'])->name('people.remove');
 Route::post('/people/search',[PeopleController::class, 'search'])->name('people.search');
 
-// Route::get('/profile', [RecommendController::class, 'show'])->name('profile');
-// Profile / recommendations
 Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('auth');
-
-
-// Reviews and favorites (AJAX)
 Route::post('/reviews', [RateReviewController::class, 'store'])->name('reviews.store');
+
+Route::get('/force-logout', function () {
+    Auth::logout();
+    session()->invalidate();
+    session()->regenerateToken();
+    return redirect()->route('home')->with('success', 'Logged out successfully.');
+});
