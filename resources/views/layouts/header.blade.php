@@ -1,15 +1,16 @@
-<header class="bg-primary-bg/90 backdrop-blur-md border-b border-accent/50 px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-50">
+<header
+    class="bg-primary-bg/90 backdrop-blur-md border-b border-accent/50 px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-50">
 
     {{-- Logo / Home --}}
     <a href="{{ route('home') }}" class="text-xl md:text-2xl font-bold text-accent flex items-center font-oswald">
-        <i class="bx bx-movie-play mr-2"></i>CineMatch
+        <img src="{{ asset('CineMatch.png') }}" alt="CineMatch Logo" class="w-12 h-12"> CineMatch
     </a>
 
     <div class="flex items-center gap-3 text-sm">
 
         {{-- BACK TO MOVIES (Hidden on Home page) --}}
         @if (!request()->routeIs('home'))
-            <a href="{{ route('home')}}" class="btn btn-outline btn-accent flex items-center gap-1 text-sm">
+            <a href="{{ route('home') }}" class="btn btn-outline btn-accent flex items-center gap-1 text-sm">
                 <i class="bx bx-arrow-back"></i>
                 <span class="hidden sm:inline">Back to Movies</span>
             </a>
@@ -18,7 +19,7 @@
         {{-- AUTHENTICATED USER --}}
         @auth
             <span class="hidden sm:inline text-text-secondary">
-                Hi, {{ Auth::user()->name ?? Auth::user()->username}}!
+                Hi, {{ Auth::user()->name ?? Auth::user()->username }}!
             </span>
 
             {{-- ADMIN ONLY: Add Movie --}}
@@ -31,9 +32,8 @@
 
             {{-- REGULAR USER: Profile (hide on profile page) --}}
             @if (Auth::user()->role === 'user' && !request()->routeIs('profile'))
-                <a href="/profile"
-                   class="btn btn-circle btn-accent text-white tooltip flex items-center justify-center"
-                   data-tip="My Profile">
+                <a href="/profile" class="btn btn-circle btn-accent text-white tooltip flex items-center justify-center"
+                    data-tip="My Profile">
                     <i class="bx bx-user text-xl"></i>
                 </a>
             @endif
@@ -41,14 +41,13 @@
             {{-- LOGOUT --}}
             <form action="{{ route('logout') }}" method="POST" class="inline-flex">
                 @csrf
-                <button type="submit"
-                        class="btn btn-circle bg-red-600 hover:bg-red-700 text-white tooltip"
-                        data-tip="Logout">
+                <button type="submit" class="btn btn-circle bg-red-600 hover:bg-red-700 text-white tooltip"
+                    data-tip="Logout">
                     <i class="bx bx-log-out text-lg"></i>
                 </button>
             </form>
 
-        {{-- GUEST USER --}}
+            {{-- GUEST USER --}}
         @else
             {{-- Hide Login/Register button on auth page --}}
             @unless (request()->routeIs('auth'))
