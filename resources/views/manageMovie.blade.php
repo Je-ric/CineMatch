@@ -14,7 +14,6 @@
             transform: rotate(90deg);
         }
 
-        /* jQuery UI autocomplete styling */
         .ui-autocomplete {
             background: #334155 !important;
             border: 2px solid #475569 !important;
