@@ -21,24 +21,38 @@
 
         <div class="tab-container flex gap-6 border-b border-gray-300 mb-6">
             <button
-                class="tab-link py-2 px-4 text-gray-500 font-medium border-b-2 border-transparent hover:text-blue-700 transition-colors"
+                class="tab-link py-2 px-4 text-gray-500 font-medium hover:text-accent transition-colors"
+                id="favorites-tab"
+                data-tab="favorites"
                 onclick="openTab(event, 'favorites')">
                 Favorites
             </button>
             <button
-                class="tab-link py-2 px-4 text-gray-500 font-medium border-b-2 border-transparent hover:text-blue-700 transition-colors"
+                class="tab-link py-2 px-4 text-gray-500 font-medium hover:text-accent transition-colors"
+                id="rated-tab"
+                data-tab="rated"
                 onclick="openTab(event, 'rated')">
                 Rated Movies
             </button>
             <button
-                class="tab-link py-2 px-4 text-gray-500 font-medium border-b-2 border-transparent hover:text-blue-700 transition-colors"
+                class="tab-link py-2 px-4 text-gray-500 font-medium hover:text-accent transition-colors"
+                id="recommendations-tab"
+                data-tab="recommendations"
                 onclick="openTab(event, 'recommendations')">
                 Recommendations
             </button>
         </div>
 
+
         {{-- Tab Contents --}}
         <div id="favorites" class="tab-content">
+            <h2 class="text-xl font-semibold text-accent mb-4 flex items-center gap-2">
+                <i class="bx bx-heart text-accent"></i>
+                Favorite Movies
+                <span class="ml-2 bg-gray-700 text-white text-sm font-semibold px-2 py-1 rounded">
+                    {{ is_countable($favorites) ? count($favorites) : 0 }}
+                </span>
+            </h2>
             <div class="mb-6 space-y-2">
                 @if (!empty($favGenres))
                     <div class="flex flex-wrap gap-2">
@@ -54,7 +68,8 @@
 
             <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 @forelse ($favorites as $movie)
-                    <x-movie-card :movie="is_array($movie) ? (object) $movie : $movie" />
+                    {{-- <x-movie-card :movie="is_array($movie) ? (object) $movie : $movie" /> --}}
+                    <x-movie-card :movie="$movie" />
                 @empty
                     <div class="text-center py-10 text-gray-400 col-span-full">
                         <i class="bx bx-heart text-5xl mb-2"></i>
@@ -65,6 +80,13 @@
         </div>
 
         <div id="rated" class="tab-content hidden mt-8">
+            <h2 class="text-xl font-semibold text-accent mb-4 flex items-center gap-2">
+                <i class="bx bx-star text-accent"></i>
+                Rated Movies
+                <span class="ml-2 bg-gray-700 text-white text-sm font-semibold px-2 py-1 rounded">
+                    {{ is_countable($rated) ? count($rated) : 0 }}
+                </span>
+            </h2>
             <div class="mb-6 space-y-2">
                 @if (!empty($ratedGenres))
                     <div class="flex flex-wrap gap-2">
@@ -148,24 +170,17 @@
             }
 
             document.addEventListener("DOMContentLoaded", function() {
-                document.getElementsByClassName("tab-link")[0].click();
+                const firstTab = document.querySelector(".tab-link");
+                firstTab.classList.add("active-tab");
+                document.getElementById(firstTab.dataset.tab).style.display = "block";
             });
+
+
         </script>
     @endpush
 
     @push('styles')
         <style>
-            .tab-link {
-                transition: color 0.2s, border-color 0.2s;
-                border-bottom-width: 2px;
-                border-bottom-color: transparent;
-            }
-
-            .tab-link.active-tab {
-                border-color: #1e40af;
-                color: #1e40af !important;
-                font-weight: 600;
-            }
         </style>
     @endpush
 
