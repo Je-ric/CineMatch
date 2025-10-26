@@ -60,7 +60,7 @@ class AuthController extends Controller
     // ---------- GOOGLE ----------
     public function redirectGoogle()
     {
-        // Forces Google to show account chooser every time
+        // forces Google to show account chooser every time
         return Socialite::driver('google')
             ->stateless()
             ->with(['prompt' => 'select_account'])
@@ -126,31 +126,35 @@ class AuthController extends Controller
         }
     }
 
-    // ---------- GITHUB ----------
-    public function redirectGithub()
-    {
-        return Socialite::driver('github')->redirect();
-    }
+    // // ---------- GITHUB ----------
+    // public function redirectGithub()
+    // {
+    //     return Socialite::driver('github')->redirect();
+    // }
 
-    public function handleGithubCallback()
-    {
-        try {
-            $socialUser = Socialite::driver('github')->stateless()->user();
-            $user = $this->findOrCreateSocialUser($socialUser, 'github');
-            Auth::login($user);
-            return redirect()->route('home');
-        } catch (\Exception $e) {
-            return redirect()->route('auth')->withErrors(['github' => $e->getMessage()]);
-        }
-    }
+    // public function handleGithubCallback()
+    // {
+    //     try {
+    //         $socialUser = Socialite::driver('github')->stateless()->user();
+    //         $user = $this->findOrCreateSocialUser($socialUser, 'github');
+    //         Auth::login($user);
+    //         return redirect()->route('home');
+    //     } catch (\Exception $e) {
+    //         return redirect()->route('auth')->withErrors(['github' => $e->getMessage()]);
+    //     }
+    // }
 
     private function findOrCreateSocialUser($socialUser, $provider)
     {
-        // Try to find by email first
-        $user = User::where('email', $socialUser->getEmail())->first();
+        //  find by email first
+        $user = User::where('email', $socialUser
+                    ->getEmail()
+                    )->first();
 
         if ($user) {
             // Update existing record with provider info
+            // Since duplicates may exists, para wala na ding errors na mangyare
+            // If same email but different provider id, just update the provider
             $user->update([
                 'provider_id' => $socialUser->getId(),
                 'provider_name' => $provider,

@@ -1,5 +1,6 @@
 <div>
     {{-- trigger the function in livewire --}}
+    {{--  return JSON --}}
     <button wire:click="toggleFavorite" class="btn {{ $isFavorited ? 'btn-accent' : 'btn-outline btn-accent' }}">
         <i class="bx {{ $isFavorited ? 'bxs-heart' : 'bx-heart' }}"></i>
         <span>{{ $isFavorited ? 'Remove from Favorites' : 'Add to Favorites' }}</span>

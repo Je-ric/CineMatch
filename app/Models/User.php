@@ -75,11 +75,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Movies this user favorited (pivot user_favorites)
-     *
-     * @return BelongsToMany<Movie>
-     */
     public function favorites(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -90,11 +85,6 @@ class User extends Authenticatable
         )->withTimestamps();
     }
 
-    /**
-     * User ratings/reviews
-     *
-     * @return HasMany<RatingReview>
-     */
     public function ratings(): HasMany
     {
         return $this->hasMany(

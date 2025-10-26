@@ -123,6 +123,7 @@ class MovieController extends Controller
             }
 
             // ensure id present before touching pivots
+            // most are pivots that need the movie id
             if (empty($movie->id)) {
                 DB::rollBack();
                 Log::error('Movie created but id missing', ['movie' => $movie->toArray()]);

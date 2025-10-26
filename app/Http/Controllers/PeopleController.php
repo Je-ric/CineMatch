@@ -8,6 +8,7 @@ use App\Models\MoviePerson;
 
 class PeopleController extends Controller
 {
+
     public function fetch(Request $request)
     {
         $validated = $request->validate([

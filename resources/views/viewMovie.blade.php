@@ -85,11 +85,11 @@
                         <div class="text-center flex flex-col items-center justify-center space-y-2">
                             @if (auth()->check())
                                 <x-review-section
-                :movie="$movie"
-                :user-review="$reviews->where('user_id', auth()->id())->first()"
-                :avg-rating="$avgRating ?? 0"
-                :total-reviews="$realReviewCount ?? 0" />
-                            @endif
+                                    :movie="$movie"
+                                    :user-review="$reviews->where('user_id', auth()->id())->first()"
+                                    :avg-rating="$avgRating ?? 0"
+                                    :total-reviews="$realReviewCount ?? 0" />
+                                                @endif
                         </div>
                     </div>
 
