@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\RatingReview;
 class MovieHelper
 {
-    // profile.php
+    // profile.blade.php
     public static function getUserFavorites($userId = null, $limit = 12)
     {
         $userId = $userId ?? Auth::id();
@@ -18,10 +18,10 @@ class MovieHelper
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->limit($limit)
-            ->pluck('movie_id');
+            ->pluck('movie_id'); // pluck, para id lang makuha at hindi buong row
 
         return Movie::with(['genres', 'country', 'language', 'ratings'])
-            ->whereIn('id', $movieIds)
+            ->whereIn('id', $movieIds) // see? id lang need natin
             ->orderBy('title', 'asc')
             ->get();
     }
@@ -59,13 +59,34 @@ class MovieHelper
     // home.php
     public static function getTrendingMovies($limit = 5)
     {
+        // reviews count
         $topIds = DB::table('ratings_reviews')
-            // ->select('movie_id', DB::raw('AVG(rating) as avg_rating'))
             ->select('movie_id', DB::raw('COUNT(*) as total_reviews'))
             ->groupBy('movie_id')
             ->orderByDesc('total_reviews')
             ->limit($limit)
             ->pluck('movie_id');
+
+        // average
+        // $topIds = DB::table('ratings_reviews')
+        //     ->select('movie_id', DB::raw('AVG(rating) as avg_rating'))
+        //     ->groupBy('movie_id')
+        //     ->orderByDesc('avg_rating')
+        //     ->limit($limit)
+        //     ->pluck('movie_id');
+
+        // combined avg rating and total reviews
+        // $topIds = DB::table('ratings_reviews')
+        //     ->select(
+        //         'movie_id',
+        //         DB::raw('AVG(rating) as avg_rating'),
+        //         DB::raw('COUNT(*) as total_reviews')
+        //     )
+        //     ->groupBy('movie_id')
+        //     ->orderByRaw('(AVG(rating) * 0.7) + (LOG(COUNT(*)) * 0.3) DESC')
+        //     ->limit($limit)
+        //     ->pluck('movie_id');
+
 
         // ORm for relations
         return Movie::with(['genres', 'country', 'language'])
@@ -76,13 +97,13 @@ class MovieHelper
     // viewMovie.php
     public static function getRelatedMovies($movie)
     {
-        $genreIds = $movie->genres->pluck('id')->toArray();
+        $genreIds = $movie->genres->pluck('id')->toArray(); // get all genre ids sa current movie
         if (empty($genreIds)) return collect();
 
         $relatedIds = DB::table('movie_genres')
-            ->select('movie_id', DB::raw('COUNT(*) as match_genres'))
-            ->whereIn('genre_id', $genreIds)
-            ->where('movie_id', '!=', $movie->id)
+            ->select('movie_id', DB::raw('COUNT(*) as match_genres')) // for each movie, count how many genres match
+            ->whereIn('genre_id', $genreIds)                          // filter by genre ids
+            ->where('movie_id', '!=', $movie->id)            // exclude current movie
             ->groupBy('movie_id')
             ->orderByDesc('match_genres')
             ->limit(20)
@@ -90,6 +111,7 @@ class MovieHelper
             ->toArray();
 
 
+        // since we already have the related ids, get full movie details
         $relatedMovies = Movie::with(['genres', 'country', 'language', 'ratings'])
             ->whereIn('id', $relatedIds)
             ->get()
@@ -111,6 +133,9 @@ class MovieHelper
     // viewMovie.php
     // home.php
     // profile.php
+    // this is useful, kase we format movies para sa blade or views, hindi na natin i-call isa-isa then my error handling pa, which is messy
+    // dito napreprevent na kaagad yung errors, nahahandle na agad,
+    // it makes sure data's are clean, if my null or missing values, handled na agad before sending sa component natin na movie card which is used in multiple views
     public static function formatMovies($movies)
     {
         return $movies->map(function ($m) {
@@ -134,6 +159,9 @@ class MovieHelper
         });
     }
 
+    // ==================================================================================
+    // From here, all functions sa baba are used only when viewing a single movie which is sa viewMovie.blade.php
+    // ==================================================================================
 
     // viewMovie.php
     // used in MovieController@show
@@ -178,8 +206,13 @@ class MovieHelper
     // used in MovieController@show
     public static function splitCastRoles($movie)
     {
-        $directors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Director') === 0)->values();
-        $actors = $movie->cast->filter(fn($p) => strcasecmp($p->pivot->role ?? '', 'Cast') === 0)->values();
+        // filter out directors and actors
+        $directors = $movie->cast->filter(fn($person) =>
+                    strcasecmp($person->pivot->role ?? '', 'Director') === 0)
+                    ->values();
+        $actors = $movie->cast->filter(fn($person) =>
+                    strcasecmp($person->pivot->role ?? '', 'Cast') === 0)
+                    ->values();
 
         return compact('directors', 'actors');
     }

@@ -19,6 +19,7 @@ class ProfileController extends Controller
         $userId = $user->id;
 
         // Fetch to RecommendController
+        // for example, we have the
         [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user, $recommend);
         [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user, $recommend);
         $recommendations = $this->getRecommendationsData($recommend, $userId);
