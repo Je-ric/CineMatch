@@ -13,6 +13,8 @@ class RatingReview extends Model
 
     protected $fillable = ['user_id', 'movie_id', 'rating', 'review'];
 
+    // Each rating review belongs to one user (the reviewer).
+    // model User::user()
     public function user()
     {
         return $this->belongsTo(
@@ -22,6 +24,8 @@ class RatingReview extends Model
         );
     }
 
+    // Each rating review belongs to one movie (the reviewed movie)
+    // model Movie::movie()
     public function movie()
     {
         return $this->belongsTo(

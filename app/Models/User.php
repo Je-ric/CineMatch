@@ -75,6 +75,17 @@ class User extends Authenticatable
         ];
     }
 
+    // A user has many rating reviews.
+    // model RatingReview::user()
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(
+            RatingReview::class,
+            'user_id',
+            'id'
+        );
+    }
+
     public function favorites(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -85,12 +96,4 @@ class User extends Authenticatable
         )->withTimestamps();
     }
 
-    public function ratings(): HasMany
-    {
-        return $this->hasMany(
-            RatingReview::class,
-            'user_id',
-            'id'
-        );
-    }
 }

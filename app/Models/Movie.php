@@ -17,8 +17,8 @@ class Movie extends Model
         'poster_url',
         'background_url',
         'trailer_url',
-        'country_id',  
-        'language_id', 
+        'country_id',
+        'language_id',
     ];
 
     public function genres()
@@ -71,13 +71,15 @@ class Movie extends Model
         ->withTimestamps();
     }
 
+    // A movie has many rating reviews.
+    // model RatingReview::movie()
     public function ratings()
     {
         return $this->hasMany(
-                RatingReview::class, 
-                        'movie_id', 
-                        'id'
-                );
+                RatingReview::class,
+                'movie_id',
+                'id'
+        );
     }
 
     public function favoritedBy()
