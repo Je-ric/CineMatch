@@ -7,7 +7,7 @@ use App\Models\Genre;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\MovieHelper;
-
+// siguro tanggalin na
 class RecommendHelper
 {
     // - RecommendController::basedOnFavoriteGenres
@@ -55,7 +55,7 @@ class RecommendHelper
     // mas madali kase na hinahanap nalang natin sa genre yung movie
     // think of it, kase if we used the user_favorites table, get each movie, get the genres, count many times each genre then group (madami)
     // but if we use the genre model, so nagloloop tayo for each genre, and find the movie that user has rated/favorited
-    
+
     //   - RecommendController::getGenreShelvesForUser - builds “shelves” grouped by top genres.
     //   - ProfileController - displays user’s top genres in UI analytics or stats.
     // ==================================================================================
