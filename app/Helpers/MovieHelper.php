@@ -42,19 +42,8 @@ class MovieHelper
         // ORM for relationships
         return Movie::with(['genres', 'ratings'])
             ->whereIn('id', $ratedIds) // only movies rated by user
-            // ->orderBy('title', 'asc') // pero kung gusto lang is by title, no need for the sorting below
-            // ->get();
-            ->get()
-                ->sortByDesc(function ($m) use ($userId) { // naging complicated lang because of sorting
-                    return optional(
-                        $m                                                // movie
-                                ->ratings                                        // get ratings
-                                ->where('user_id', $userId)    // by the user id
-                                ->first())                                       // get the first and usually only rating
-                                ->created_at;                                    // sort
-            })
-
-            ->values();
+            ->orderBy('title', 'asc')
+            ->get();
     }
 
     // home.php
@@ -94,12 +83,13 @@ class MovieHelper
             ->where('movie_id', '!=', $movie->id)            // exclude current movie
             ->groupBy('movie_id')
             ->orderByDesc('match_genres')
-            ->limit(20)
+            ->limit(50)
             ->pluck('movie_id')
             ->toArray();
 
 
         // since we already have the related ids, get full movie details
+        // since meron din tayong genre ids, foreach movie, we match the genre id ng current, sa related movie (each), then sort by
         $relatedMovies = Movie::with(['genres', 'country', 'language', 'ratings'])
             ->whereIn('id', $relatedIds)
             ->get()
@@ -256,7 +246,6 @@ class MovieHelper
 
 
         $shelves = $topGenres->map(function ($genre) use ($userId, $perGenre) {
-            // simple criteria: same genre, exclude user's favorites and rated
             $excludedIds = self::getExcludedMovieIdsForUser($userId);
             $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
                 ->whereHas('genres', function ($q) use ($genre) {
