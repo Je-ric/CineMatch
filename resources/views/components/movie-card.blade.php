@@ -53,7 +53,7 @@
             <div class="mt-auto pt-2">
                 <div class="flex gap-2">
                     <a href="{{ route('movies.manage.edit', ['id' => $movie->id]) }}"
-                       class="btn btn-xs btn-outline btn-info flex-1">
+                        class="btn btn-xs btn-outline btn-info flex-1">
                         <i class='bx bx-edit'></i> Edit
                     </a>
 
