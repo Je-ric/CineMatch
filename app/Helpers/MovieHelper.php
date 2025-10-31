@@ -76,19 +76,6 @@ class MovieHelper
         //     ->limit($limit)
         //     ->pluck('movie_id');
 
-        // combined avg rating and total reviews
-        // $topIds = DB::table('ratings_reviews')
-        //     ->select(
-        //         'movie_id',
-        //         DB::raw('AVG(rating) as avg_rating'),
-        //         DB::raw('COUNT(*) as total_reviews')
-        //     )
-        //     ->groupBy('movie_id')
-        //     ->orderByRaw('(AVG(rating) * 0.7) + (LOG(COUNT(*)) * 0.3) DESC')
-        //     ->limit($limit)
-        //     ->pluck('movie_id');
-
-
         // ORm for relations
         return Movie::with(['genres', 'country', 'language'])
             ->whereIn('id', $topIds)
@@ -160,6 +147,24 @@ class MovieHelper
         });
     }
 
+
+    // checker for movie using pivot tables, exclude yung meron na
+    public static function getExcludedMovieIdsForUser(int $userId): array
+    {
+        if (!$userId) return [];
+
+        $favIds = DB::table('user_favorites')
+            ->where('user_id', $userId)
+            ->pluck('movie_id')
+            ->toArray();
+
+        $ratedIds = DB::table('ratings_reviews')
+            ->where('user_id', $userId)
+            ->pluck('movie_id')
+            ->toArray();
+
+        return array_values(array_unique(array_merge($favIds, $ratedIds)));
+    }
 
 
 
@@ -240,6 +245,7 @@ class MovieHelper
     {
         if (!$userId) return [];
 
+        // pick source for top genres (simple if/else)
         if ($source === 'rated') {
             $topGenres = self::getTopGenresFromRatings($userId, $topLimit);
         } else {
@@ -248,10 +254,17 @@ class MovieHelper
 
         if ($topGenres->isEmpty()) return [];
 
+
         $shelves = $topGenres->map(function ($genre) use ($userId, $perGenre) {
+            // simple criteria: same genre, exclude user's favorites and rated
+            $excludedIds = self::getExcludedMovieIdsForUser($userId);
             $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
-                ->whereHas('genres', fn($q) => $q->where('genres.id', $genre->id))
-                ->whereDoesntHave('favoritedBy', fn($q) => $q->where('user_id', $userId))
+                ->whereHas('genres', function ($q) use ($genre) {
+                    $q->where('genres.id', $genre->id);
+                })
+                ->when(!empty($excludedIds), function ($q) use ($excludedIds) {
+                    $q->whereNotIn('id', $excludedIds);
+                })
                 ->limit($perGenre)
                 ->get();
 
@@ -272,7 +285,7 @@ class MovieHelper
     {
         if (!$userId) return collect();
 
-        // Top genres from favorites
+        // Top genres from favorites (beginner-friendly counting)
         $topGenreIds = DB::table('movie_genre')
             ->join('user_favorites', 'movie_genre.movie_id', '=', 'user_favorites.movie_id')
             ->where('user_favorites.user_id', $userId)
@@ -284,17 +297,26 @@ class MovieHelper
 
         if ($topGenreIds->isEmpty()) return collect();
 
-        // ORM for related movies
+        $excludedIds = self::getExcludedMovieIdsForUser($userId);
+
+        // Simple: same genres, exclude user's favorites and rated
         $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
-            ->whereHas('genres', fn($q) => $q->whereIn('genres.id', $topGenreIds))
-            ->whereDoesntHave('favoritedBy', fn($q) => $q->where('user_id', $userId))
+            ->whereHas('genres', function ($q) use ($topGenreIds) {
+                $q->whereIn('genres.id', $topGenreIds);
+            })
+            ->when(!empty($excludedIds), function ($q) use ($excludedIds) {
+                $q->whereNotIn('id', $excludedIds);
+            })
             ->get()
             ->map(function ($m) use ($topGenreIds) {
                 $m->match_genres = $m->genres->pluck('id')->intersect($topGenreIds)->count();
-                $m->avg_rating = $m->ratings->avg('rating') ? round($m->ratings->avg('rating'), 1) : 0;
+                $m->avg_rating = $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : 0;
                 return $m;
             })
-            ->sortByDesc(fn($m) => [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0])
+            ->sortByDesc(function ($m) {
+                // simple sort: more matched genres first, then higher avg, then newer year
+                return [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0];
+            })
             ->take($limit)
             ->values();
 
