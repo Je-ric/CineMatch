@@ -286,7 +286,7 @@ class MovieHelper
         if (!$userId) return collect();
 
         // Top genres from favorites (beginner-friendly counting)
-        $topGenreIds = DB::table('movie_genre')
+        $topGenreIds = DB::table('movie_genres')
             ->join('user_favorites', 'movie_genre.movie_id', '=', 'user_favorites.movie_id')
             ->where('user_favorites.user_id', $userId)
             ->select('movie_genre.genre_id', DB::raw('COUNT(*) as fav_count'))

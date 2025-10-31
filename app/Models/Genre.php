@@ -16,8 +16,8 @@ class Genre extends Model
         return $this->belongsToMany(
             Movie::class,
             'movie_genres',
-            'genre_id',   // pivot key for Genre
-            'movie_id'    // pivot key for Movie
+            'genre_id',  
+            'movie_id'    
         );
     }
 }
