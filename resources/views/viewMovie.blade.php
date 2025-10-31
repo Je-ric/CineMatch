@@ -111,6 +111,10 @@
         </div>
     </div>
 
+
+
+
+
     {{-- Overview --}}
     <section class="relative z-10 max-w-7xl mx-auto px-4 pb-16 space-y-8">
         <div class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6 md:p-8">
@@ -130,6 +134,16 @@
                 :real-review-count="$realReviewCount ?? 0" />
         </div>
     </section>
+
+
+
+
+
+
+
+
+
+
 
     {{-- Related Movies --}}
     <section class="relative z-10 max-w-7xl mx-auto px-4 pb-16">

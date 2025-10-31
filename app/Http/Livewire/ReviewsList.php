@@ -12,8 +12,6 @@ class ReviewsList extends Component
     public $reviews;
     public $realReviewCount = 0;
 
-    // Livewire v3 uses attributes for events
-
     public function mount($movie, $reviews, $realReviewCount = 0)
     {
         $this->movie = $movie;

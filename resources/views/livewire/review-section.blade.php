@@ -21,6 +21,8 @@
         <button class="btn btn-accent" wire:click="$dispatch('openReviewModal')">
             <i class="bx bx-star"></i> Leave a Review
         </button>
-        <livewire:review-modal :movie="$movie" />
+        @push('modals')
+            <livewire:review-modal :movie="$movie" />
+        @endpush
     @endif
 </div>

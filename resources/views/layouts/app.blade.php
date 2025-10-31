@@ -30,5 +30,7 @@
 
     @stack('scripts')
     @livewireScripts
+
+    @stack('modals')
 </body>
 </html>

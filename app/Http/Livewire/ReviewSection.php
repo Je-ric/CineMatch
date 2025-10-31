@@ -9,14 +9,11 @@ use App\Models\Movie;
 
 class ReviewSection extends Component
 {
-    /** @var \App\Models\Movie */
     public $movie;
     public $userReview;
     public $avgRating = 0;
     public $totalReviews = 0;
     public $movieId = 0;
-
-    // Livewire v3 uses attributes for events
 
     public function mount(Movie $movie, $userReview = null, $avgRating = 0, $totalReviews = 0)
     {

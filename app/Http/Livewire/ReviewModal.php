@@ -73,7 +73,8 @@ class ReviewModal extends Component
         $this->userReview = $record;
         $this->isOpen = false;
 
-        // Livewire v3: dispatch events to specific components
+        // pag sinubmit, its like we're notifying other components to refresh
+        // para itong chain reaction after submitting review
         $this->dispatch('reviewUpdated', $this->movie->id)->to(ReviewSection::class);
         $this->dispatch('reviewUpdated', $this->movie->id)->to(ReviewsList::class);
 

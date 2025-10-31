@@ -34,7 +34,7 @@
 
     <div class="p-4 flex flex-col flex-grow">
         <h5 class="font-semibold text-base mb-1 text-white leading-tight">
-            {{ $movie->title }}
+            {{ \Illuminate\Support\Str::limit($movie->title, 21, '...') }}
             @if(!empty($movie->release_year))
                 <small class="text-gray-400 font-normal">({{ $movie->release_year }})</small>
             @endif
