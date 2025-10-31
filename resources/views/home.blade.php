@@ -64,7 +64,7 @@
         <section id="trendingSection" class="mb-12">
             <div class="border-t border-neutral-800 mb-6"></div>
             <div class="flex items-end justify-between mb-4">
-                <h3 class="text-2xl font-semibold">Trending now</h3>
+                <h3 class="text-2xl font-semibold">Trending</h3>
             </div>
             <div id="trendingGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                 @foreach ($trendingJson ?? [] as $m)

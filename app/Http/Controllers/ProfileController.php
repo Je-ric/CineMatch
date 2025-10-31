@@ -6,12 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\Genre;
-use App\Http\Controllers\RecommendController;
 use App\Helpers\MovieHelper;
 
 class ProfileController extends Controller
 {
-    public function show(RecommendController $recommend)
+    public function show()
     {
         $user = Auth::user();
         if (! $user) return redirect()->route('login');
@@ -20,9 +19,9 @@ class ProfileController extends Controller
 
         // Fetch to RecommendController
         // for example, we have the
-        [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user, $recommend);
-        [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user, $recommend);
-        $recommendations = $this->getRecommendationsData($recommend, $userId);
+        [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user);
+        [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user);
+        $recommendations = $this->getRecommendationsData($userId);
 
         return view('profile', array_merge(
             compact(
@@ -38,16 +37,15 @@ class ProfileController extends Controller
         ));
     }
 
-    private function getFavoritesData($user, RecommendController $recommend): array
+    private function getFavoritesData($user): array
     {
         // may retrieval sa RecommendController
-        $favModels = $recommend->getFavorites($user->id); // Collection
-
-        // shape for view (keep minimal object form)
+        // replaced with MovieHelper
+        $favModels = MovieHelper::getUserFavorites($user->id); // Collection
         $favorites = MovieHelper::formatMovies($favModels);
 
         // same here
-        $favGenres = $recommend->getFavCountsByGenre($user->id)->toArray();
+        $favGenres = MovieHelper::getFavCountsByGenre($user->id)->toArray();
 
         $favCountries = $favModels
             ->filter(fn($m) => !empty($m->country))
@@ -63,15 +61,16 @@ class ProfileController extends Controller
         return [$favorites, $favGenres, $favCountries];
     }
 
-    private function getRatedData($user, RecommendController $recommend): array
+    private function getRatedData($user): array
     {
         // may retrieval sa RecommendController
-        $ratedModels = $recommend->getRated($user->id); // Collection of formatted movies
+        // replaced with MovieHelper
+        $ratedModels = MovieHelper::getUserRatedMovies($user->id); // Collection of formatted movies
 
         $rated = MovieHelper::formatMovies($ratedModels);
 
         // same here
-        $ratedGenres = $recommend->getRatedCountsByGenre($user->id)->toArray();
+        $ratedGenres = MovieHelper::getRatedCountsByGenre($user->id)->toArray();
 
         $ratedCountries = $ratedModels
             ->filter(fn($m) => !empty($m->country))
@@ -87,13 +86,15 @@ class ProfileController extends Controller
         return [$rated, $ratedGenres, $ratedCountries];
     }
 
-    private function getRecommendationsData(RecommendController $recommend, $userId): array
+    private function getRecommendationsData($userId): array
     {
         return [
-            'genreShelvesFav' => $recommend->getGenreShelvesForUser($userId, 'favorites', 5, 5),
-            'genreShelvesRated' => $recommend->getGenreShelvesForUser($userId, 'rated', 5, 5),
-            'topGenresFav' => $recommend->getTopGenresFromFavorites($userId, 5),
-            'topGenresRated' => $recommend->getTopGenresFromRatings($userId, 5),
+            'genreShelvesFav' => MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5),
+            'genreShelvesRated' => MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5),
+            'topGenresFav' => MovieHelper::getTopGenresFromFavorites($userId, 5),
+            'topGenresRated' => MovieHelper::getTopGenresFromRatings($userId, 5),
         ];
     }
+
+    
 }

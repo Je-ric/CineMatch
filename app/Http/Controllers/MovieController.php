@@ -20,9 +20,7 @@ class MovieController extends Controller
     public function index()
     {
         $movies = Movie::with(['genres', 'ratings', 'country', 'language'])->get();
-
         $moviesJson = MovieHelper::formatMovies($movies)->toArray();
-
         $trending = MovieHelper::getTrendingMovies(6);
         $trendingJson = MovieHelper::formatMovies($trending)->toArray();
 
