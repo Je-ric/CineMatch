@@ -36,7 +36,7 @@
                     </div>
                 </div>
 
-                {{-- Movie Info --}}
+                {{-- Info --}}
                 <div class="lg:col-span-2 space-y-6">
                     <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
                         {{ $movie->title }}
@@ -91,7 +91,6 @@
                         </div>
                     </div>
 
-                    {{-- Actions --}}
                     <div class="flex flex-wrap gap-3">
                         @if (!empty($movie->trailer_url))
                             <a href="#trailer-section" class="btn btn-accent">

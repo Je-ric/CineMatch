@@ -18,8 +18,6 @@
                         <div class="flex flex-col items-center mb-6">
                             <div
                                 class="flex flex-row items-center mb-6 text-xl md:text-2xl font-bold text-accent font-oswald">
-                                {{-- <i class="bx bx-movie-play text-4xl text-accent"></i>
-                                <h1 class="text-2xl ml-3 text-center text-accent">CineMatch</h1> --}}
                                 <img src="{{ asset('CineMatch.png') }}" alt="CineMatch Logo" class="w-12 h-12">
                                 CineMatch
                             </div>
@@ -107,8 +105,6 @@
                             </a>
                             --}}
                     </div>
-
-
 
                 </div>
             </div>

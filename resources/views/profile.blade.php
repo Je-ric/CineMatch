@@ -3,7 +3,7 @@
 @section('page-content')
     <div class="max-w-7xl mx-auto px-4 py-8 min-h-screen">
 
-        {{-- Profile Header --}}
+        {{-- Profile --}}
         <div
             class="bg-secondary-bg/90 backdrop-blur-sm border border-border-color rounded-lg p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6">
             <div class="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center text-4xl text-accent">
@@ -44,7 +44,7 @@
         </div>
 
 
-        {{-- Tab Contents --}}
+        {{-- Tab --}}
         <div id="favorites" class="tab-content">
             <h2 class="text-xl font-semibold text-accent mb-4 flex items-center gap-2">
                 <i class="bx bx-heart text-accent"></i>
@@ -79,6 +79,8 @@
             </section>
         </div>
 
+
+        {{-- Tab --}}
         <div id="rated" class="tab-content hidden mt-8">
             <h2 class="text-xl font-semibold text-accent mb-4 flex items-center gap-2">
                 <i class="bx bx-star text-accent"></i>
@@ -112,6 +114,8 @@
             </section>
         </div>
 
+        
+        {{-- Tab  --}}
         <div id="recommendations" class="tab-content hidden mt-8">
             {{-- Because you like these genres (from favorites) --}}
             @if (!empty($genreShelvesFav) && count($genreShelvesFav) > 0)
@@ -177,11 +181,6 @@
 
 
         </script>
-    @endpush
-
-    @push('styles')
-        <style>
-        </style>
     @endpush
 
 @endsection
