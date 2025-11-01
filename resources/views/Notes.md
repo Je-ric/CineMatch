@@ -56,3 +56,6 @@ php artisan make:migration update_movies_add_country_and_language_columns
 
 
 https://filamentapps.com/blog/troubleshooting-laravel-livewire-resolving-the-unable-to-find-component-error
+
+Admin
+admin123
