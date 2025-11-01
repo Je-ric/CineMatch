@@ -59,3 +59,8 @@ https://filamentapps.com/blog/troubleshooting-laravel-livewire-resolving-the-una
 
 Admin
 admin123
+
+make sure admin:
+    - doesnt have profile
+    - can't favorites
+    - can't rate & review

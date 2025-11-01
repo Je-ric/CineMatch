@@ -13,16 +13,19 @@
         </div>
     </div>
 
-    @if($userReview)
-        <button class="btn border-accent bg-transparent text-accent cursor-not-allowed" disabled>
-            <i class="bx bx-check"></i> Already Reviewed
-        </button>
-    @else
-        <button class="btn btn-accent" wire:click="$dispatch('openReviewModal')">
-            <i class="bx bx-star"></i> Leave a Review
-        </button>
-        @push('modals')
-            <livewire:review-modal :movie="$movie" />
-        @endpush
+    @if (Auth::check() && Auth::user()->role !== 'admin')
+        @if($userReview)
+            <button class="btn border-accent bg-transparent text-accent cursor-not-allowed" disabled>
+                <i class="bx bx-check"></i> Already Reviewed
+            </button>
+        @else
+            <button class="btn btn-accent" wire:click="$dispatch('openReviewModal')">
+                <i class="bx bx-star"></i> Leave a Review
+            </button>
+            @push('modals')
+                <livewire:review-modal :movie="$movie" />
+            @endpush
+        @endif
     @endif
+    
 </div>

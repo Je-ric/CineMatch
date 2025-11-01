@@ -98,11 +98,14 @@
                             </a>
                         @endif
 
-                        @livewire('favorite-button', [
-                            'movie' => $movie,
-                            'isFavorited' => auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists(),
-                            'favoriteCount' => $movie->favoritedBy()->count(),
-                        ])
+                        @if (Auth::check() && Auth::user()->role !== 'admin')
+                            @livewire('favorite-button', [
+                                'movie' => $movie,
+                                'isFavorited' => auth()->check() && auth()->user()->favorites()->wherePivot('movie_id', $movie->id)->exists(),
+                                'favoriteCount' => $movie->favoritedBy()->count(),
+                            ])
+                        @endif
+
 
                     </div>
                 </div>
