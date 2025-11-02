@@ -24,7 +24,7 @@ class ReviewSection extends Component
         $this->totalReviews = $totalReviews;
     }
 
-    #[On('reviewUpdated')]
+    #[On('reviewUpdated')] // Listen for the 'reviewUpdated' event sa ReviewModal.php::submitReview()
     public function refreshReviews($updatedMovieId)
     {
         if ($this->movieId !== (int) $updatedMovieId) return;

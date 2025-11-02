@@ -39,7 +39,7 @@ class ReviewModal extends Component
         }
     }
 
-    #[On('openReviewModal')]
+    #[On('openReviewModal')] // when this is clicked/fired, open modal 
     public function openModal()
     {
         $this->isOpen = true;

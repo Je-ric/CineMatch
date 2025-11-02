@@ -19,6 +19,7 @@
                 <i class="bx bx-check"></i> Already Reviewed
             </button>
         @else
+            {{-- ReviewModal.php::openModal() --}}
             <button class="btn btn-accent" wire:click="$dispatch('openReviewModal')">
                 <i class="bx bx-star"></i> Leave a Review
             </button>
@@ -27,5 +28,5 @@
             @endpush
         @endif
     @endif
-    
+
 </div>

@@ -17,6 +17,7 @@
                     </span>
                 </h3>
 
+                {{-- ReviewModal.php::submitReview() --}}
                 <form wire:submit.prevent="submitReview" class="space-y-6">
                     {{-- Rating --}}
                     <div class="text-center">
@@ -35,9 +36,9 @@
                     <div>
                         <label class="block text-gray-300 mb-2 font-medium">Your Review</label>
                         <textarea wire:model.defer="review"
-                                  class="w-full h-28 bg-slate-700/70 border border-slate-600 rounded-lg px-3 py-2 text-white
-                                         focus:outline-none focus:ring-2 focus:ring-accent/60 resize-none placeholder-gray-400"
-                                  placeholder="Share your thoughts..."></textarea>
+                                    placeholder="Share your thoughts..."
+                                    class="w-full h-28 bg-slate-700/70 border border-slate-600 rounded-lg px-3 py-2 text-white
+                                            focus:outline-none focus:ring-2 focus:ring-accent/60 resize-none placeholder-gray-400"></textarea>
                         @error('review') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
 
