@@ -113,8 +113,8 @@ Represents actors, directors, or other movie contributors.
 | user_favorites  | Connects users & movies for favorites        |
 
 **Tip:**  
-- Use pivot tables for **simple links**.  
-- Use full models for **tables with extra data** (e.g., `ratings_reviews`).
+- Use pivot tables for **simple links** (ex, `user_favorites`).  
+- Use full models for **tables with extra data** (ex, `ratings_reviews`).
 
 ---
 
