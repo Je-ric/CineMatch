@@ -16,8 +16,8 @@ This document explains the flow of the **Profile** and **Movie viewing** system 
 1. User visits `/profile` → `ProfileController@show` is triggered.
 2. Blade receives:
    - `$user`
-   - `$favorites`, `$favGenres`, `$favCountries`
-   - `$rated`, `$ratedGenres`, `$ratedCountries`
+   - `$favorites`, `$favGenres`
+   - `$rated`, `$ratedGenres`
    - `$genreShelvesFav`, `$genreShelvesRated`
 3. Tabs in Blade:
    - **Favorites:** Loops through `$favorites` and `$favGenres`.
@@ -97,7 +97,6 @@ Return: Blade viewMovie.blade.php with all data.
 - `getTopGenresFromFavorites($userId, $limit)` → Fetches top N genres from favorites.  
 - `getTopGenresFromRatings($userId, $limit)` → Fetches top N genres from ratings.  
 - `getGenreShelvesForUser($userId, $source, $topLimit, $perGenre)` → Builds "shelves" for UI by genre.  
-- `basedOnFavoriteGenres($userId, $limit)` → Personalized recommendations based on favorite genres.  
 
 ## 3.3 Movie Details
 
