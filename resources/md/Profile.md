@@ -156,14 +156,15 @@ Database (movies, genres, ratings_reviews, user_favorites)
   - `profile.recommendationsTab`
 - Default tab opened on page load.
 
-
+___
+# READ MO DIN ITO
 ___
 
 ## Profile Page Tabs (Blade)
 
 The **profile page** (profile.blade.php) contains **three main tabs**: Favorites, Rated Movies, and Recommendations. Each tab pulls user-specific data using helper functions in MovieHelper.
 
-### Favorites (#favorites)
+### 1. Favorites (#favorites)
 
 **Purpose:** Display the movies the user has favorited along with counts on favorite genres.
 
@@ -186,8 +187,7 @@ The **profile page** (profile.blade.php) contains **three main tabs**: Favorites
 *   Display genre-based to understand user preferences
     
 
-Rated Movies (#rated)
--------------------------
+### 2. Rated Movies (#rated)
 
 **Purpose:** Display movies the user has rated along with analytics on rated genres.
 **Data Used:**
@@ -209,7 +209,7 @@ Rated Movies (#rated)
 *   Provide insights into the genres the user interacts with most
     
 ---
-## Recommendations (#recommendations)
+### 3. Recommendations (#recommendations)
 
 **Purpose:** Display recommendations based on user’s favorites and rated movies. Includes genre-specific shelves like “Because you like these genres” and “Recommended from genres you rated.”
 

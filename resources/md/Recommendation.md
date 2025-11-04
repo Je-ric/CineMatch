@@ -25,8 +25,6 @@ This document explains the flow of the **Profile** and **Movie viewing** system 
    - **Recommendations:** Loops through `$genreShelvesFav` and `$genreShelvesRated`.
 4. Components used:
    - `<x-movie-card>` → displays individual movie.
-   - `<livewire:review-section>` → handles user reviews dynamically.
-   - `<livewire:favorite-button>` → handles favoriting.
 
 ---
 
@@ -36,7 +34,7 @@ This document explains the flow of the **Profile** and **Movie viewing** system 
 
 **Flow:**
 1. User visits `/movie/{id}` → `MovieController@show`.
-2. Blade receives:
+2. Blade receives: (yung may mga via is referring to MovieHelper)
    - `$movie` → details of the movie
    - `$directors`, `$actors` → via `splitCastRoles`
    - `$reviews` → via `getMovieReviews`
