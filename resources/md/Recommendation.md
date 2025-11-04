@@ -60,12 +60,10 @@ ProfileController@show
     │     ├─> MovieHelper::getUserFavorites($userId)
     │     ├─> MovieHelper::formatMovies()
     │     ├─> MovieHelper::getFavCountsByGenre($userId)
-    │     └─> Generates $favCountries from country relationship
     ├─> getRatedData($user)
     │     ├─> MovieHelper::getUserRatedMovies($userId)
     │     ├─> MovieHelper::formatMovies()
     │     ├─> MovieHelper::getRatedCountsByGenre($userId)
-    │     └─> Generates $ratedCountries from country relationship
     └─> getRecommendationsData($userId)
           ├─> MovieHelper::getGenreShelvesForUser($userId, 'favorites')
           ├─> MovieHelper::getGenreShelvesForUser($userId, 'rated')
@@ -157,3 +155,4 @@ Return: Blade viewMovie.blade.php with all data.
 ### Tab-based UI
 
 - Favorites / Rated / Recommendations handled via JavaScript tab switching.
+
