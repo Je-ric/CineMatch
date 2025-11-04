@@ -19,8 +19,8 @@ class ProfileController extends Controller
 
         // Fetch to RecommendController
         // for example, we have the
-        [$favorites, $favGenres, $favCountries] = $this->getFavoritesData($user);
-        [$rated, $ratedGenres, $ratedCountries] = $this->getRatedData($user);
+        [$favorites, $favGenres] = $this->getFavoritesData($user);
+        [$rated, $ratedGenres] = $this->getRatedData($user);
         $recommendations = $this->getRecommendationsData($userId);
 
         return view('profile', array_merge(
@@ -29,9 +29,7 @@ class ProfileController extends Controller
                 'favorites',
                 'rated',
                 'favGenres',
-                'favCountries',
                 'ratedGenres',
-                'ratedCountries'
             ),
             $recommendations
         ));
@@ -47,18 +45,7 @@ class ProfileController extends Controller
         // same here
         $favGenres = MovieHelper::getFavCountsByGenre($user->id)->toArray();
 
-        $favCountries = $favModels
-            ->filter(fn($m) => !empty($m->country))
-            ->groupBy(fn($m) => $m->country->id)
-            ->map(fn($group) => (object)[
-                'id' => $group->first()->country->id,
-                'name' => $group->first()->country->name,
-                'cnt' => $group->count(),
-            ])
-            ->values()
-            ->toArray();
-
-        return [$favorites, $favGenres, $favCountries];
+        return [$favorites, $favGenres];
     }
 
     private function getRatedData($user): array
@@ -72,18 +59,7 @@ class ProfileController extends Controller
         // same here
         $ratedGenres = MovieHelper::getRatedCountsByGenre($user->id)->toArray();
 
-        $ratedCountries = $ratedModels
-            ->filter(fn($m) => !empty($m->country))
-            ->groupBy(fn($m) => $m->country->id)
-            ->map(fn($group) => (object)[
-                'id' => $group->first()->country->id,
-                'name' => $group->first()->country->name,
-                'cnt' => $group->count(),
-            ])
-            ->values()
-            ->toArray();
-
-        return [$rated, $ratedGenres, $ratedCountries];
+        return [$rated, $ratedGenres];
     }
 
     private function getRecommendationsData($userId): array
@@ -96,5 +72,5 @@ class ProfileController extends Controller
         ];
     }
 
-    
+
 }
