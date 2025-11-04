@@ -30,12 +30,9 @@ Route::get('/auth/facebook/callback', [AuthController::class, 'handleFacebookCal
 Route::get('/auth/github/redirect', [AuthController::class, 'redirectGithub'])->name('auth.github.redirect');
 Route::get('/auth/github/callback', [AuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
 
-
-
 Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 
 Route::get('/viewMovie/{id}', [MovieController::class, 'show'])->name('movie.show');
 
@@ -52,7 +49,6 @@ Route::post('/people/remove',[PeopleController::class, 'remove'])->name('people.
 Route::post('/people/search',[PeopleController::class, 'search'])->name('people.search');
 
 Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('auth');
-Route::post('/reviews', [RateReviewController::class, 'store'])->name('reviews.store');
 
 Route::get('/force-logout', function () {
     Auth::logout();
