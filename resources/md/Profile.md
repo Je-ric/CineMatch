@@ -34,7 +34,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 # Step-by-Step Flow
 
-## 1. Fetch User Favorites
+##### 1. Fetch User Favorites
 
 **Controller Function:** `ProfileController@getFavoritesData($user)`  
 **Helper Functions:** `MovieHelper::getUserFavorites($userId)`, `MovieHelper::formatMovies($movies)`, `MovieHelper::getFavCountsByGenre($userId)`
@@ -50,7 +50,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 2. Fetch User Rated Movies
+### 2. Fetch User Rated Movies
 
 **Controller Function:** `ProfileController@getRatedData($user)`  
 **Helper Functions:** `MovieHelper::getUserRatedMovies($userId)`, `MovieHelper::formatMovies($movies)`, `MovieHelper::getRatedCountsByGenre($userId)`
@@ -66,7 +66,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 3. Fetch Recommendations
+### 3. Fetch Recommendations
 
 **Controller Function:** `ProfileController@getRecommendationsData($userId)`  
 **Helper Functions:** 
@@ -89,25 +89,9 @@ Database (movies, genres, ratings_reviews, user_favorites)
   'topGenresRated' => [...],
 ]
 ```
-
 ---
 
-## 4. Generate Recommendations Based on Favorite Genres
-
-**Helper Function:** `MovieHelper::basedOnFavoriteGenres($userId, $limit)`
-
-- Fetches movies from **top favorite genres only**.
-- Excludes movies already favorited or rated.
-- Maps movies with `match_genres`, average rating, etc.
-- Formats movies for Blade.
-
-**Example:**
-- Top favorite genres: Sci-Fi, Action
-- Recommended movies: *Dune*, *Matrix Resurrections*
-
----
-
-## 5. Format Movies for Blade
+## 4. Format Movies for Blade
 
 **Helper Function:** `MovieHelper::formatMovies($movies)`
 
@@ -123,7 +107,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 6. Generate Genre Shelves
+## 5. Generate Genre Shelves
 
 **Helper Function:** `MovieHelper::getGenreShelvesForUser($userId, $source, $topLimit, $perGenre)`
 
@@ -135,16 +119,16 @@ Database (movies, genres, ratings_reviews, user_favorites)
 **Example Layout:**
 
 **Favorites Shelves:**
-🎞 Sci-Fi Recommendations → [Movie1, Movie2, Movie3...]  
-🎞 Drama Picks → [Movie1, Movie2...]
+🎞 Sci-Fi → [Movie1, Movie2, Movie3...]  
+🎞 Drama → [Movie1, Movie2...]
 
 **Rated Shelves:**
-🎞 Sci-Fi Rated Picks → [Movie4, Movie5...]  
-🎞 Adventure Rated → [Movie6, Movie7...]
+🎞 Sci-Fi → [Movie4, Movie5...]  
+🎞 Adventure → [Movie6, Movie7...]
 
 ---
 
-## 7. Return Data to Blade
+## 6. Return Data to Blade
 
 **Controller:** `ProfileController@show()`
 
@@ -161,7 +145,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 8. Blade Tabs
+## 7. Blade Tabs
 
 **Blade View:** `profile.blade.php`
 
@@ -172,39 +156,14 @@ Database (movies, genres, ratings_reviews, user_favorites)
   - `profile.recommendationsTab`
 - Default tab opened on page load.
 
----
 
-## Summary Flow
+___
 
-| Step | Function / Helper | Description |
-| ---- | ---------------- | ----------- |
-| 1    | `ProfileController@getFavoritesData` / `MovieHelper::getUserFavorites` | Fetch user’s favorites |
-| 2    | `ProfileController@getRatedData` / `MovieHelper::getUserRatedMovies` | Fetch user’s rated movies |
-| 3    | `ProfileController@getRecommendationsData` / `MovieHelper::getGenreShelvesForUser` | Build genre shelves for favorites and rated |
-| 4    | `MovieHelper::getTopGenresFromFavorites` / `MovieHelper::getTopGenresFromRatings` | Identify top genres separately |
-| 5    | `MovieHelper::basedOnFavoriteGenres` | Fetch favorite-based recommended movies |
-| 6    | `MovieHelper::formatMovies` | Format movie objects for Blade |
-| 7    | `ProfileController@show` → `profile.blade.php` | Merge all data and render tabs |
-
----
-
-## Logic Behind Recommendations
-
-- Favorites and rated movies are handled **separately**; genres are **not merged**.
-- Recommendations are based on **top favorite genres only**.
-- Rated movies are displayed in separate shelves.
-- `formatMovies()` ensures data consistency and prevents errors in Blade components.
-- `getExcludedMovieIdsForUser()` prevents recommending movies already seen or rated.
-
-
-
-Profile Page Tabs (Blade)
-=========================
+## Profile Page Tabs (Blade)
 
 The **profile page** (profile.blade.php) contains **three main tabs**: Favorites, Rated Movies, and Recommendations. Each tab pulls user-specific data using helper functions in MovieHelper.
 
-Favorites (#favorites)
---------------------------
+### Favorites (#favorites)
 
 **Purpose:** Display the movies the user has favorited along with counts on favorite genres.
 
@@ -231,13 +190,10 @@ Rated Movies (#rated)
 -------------------------
 
 **Purpose:** Display movies the user has rated along with analytics on rated genres.
-
 **Data Used:**
 
 *   $rated → list of movies the user has rated
 *   $ratedGenres → counts of rated movies by genre
-    
-
 
 `   [$rated, $ratedGenres] = $this->getRatedData($user);   `
 
@@ -292,3 +248,27 @@ Rated Movies (#rated)
     *   $genreShelvesRated → getGenreShelvesForUser($userId, 'rated')
 *   **Not used anywhere in your current profile page:**
     *   basedOnFavoriteGenres() → could replace or supplement getGenreShelvesForUser() for a flat list recommendation.
+
+---
+
+## Summary Flow
+
+| Step | Function / Helper | Description |
+| ---- | ---------------- | ----------- |
+| 1    | `ProfileController@getFavoritesData` / `MovieHelper::getUserFavorites` | Fetch user’s favorites |
+| 2    | `ProfileController@getRatedData` / `MovieHelper::getUserRatedMovies` | Fetch user’s rated movies |
+| 3    | `ProfileController@getRecommendationsData` / `MovieHelper::getGenreShelvesForUser` | Build genre shelves for favorites and rated |
+| 4    | `MovieHelper::getTopGenresFromFavorites` / `MovieHelper::getTopGenresFromRatings` | Identify top genres separately |
+| 5    | `MovieHelper::basedOnFavoriteGenres` | Fetch favorite-based recommended movies |
+| 6    | `MovieHelper::formatMovies` | Format movie objects for Blade |
+| 7    | `ProfileController@show` → `profile.blade.php` | Merge all data and render tabs |
+
+---
+
+## Logic Behind Recommendations
+
+- Favorites and rated movies are handled **separately**; genres are **not merged**.
+- Recommendations are based on **top favorite genres only**.
+- Rated movies are displayed in separate shelves.
+- `formatMovies()` ensures data consistency and prevents errors in Blade components.
+- `getExcludedMovieIdsForUser()` prevents recommending movies already seen or rated.
