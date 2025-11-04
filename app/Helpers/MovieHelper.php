@@ -267,51 +267,6 @@ class MovieHelper
         return $shelves;
     }
 
-    // - RecommendController::basedOnFavoriteGenres
-    // - ProfileController::getRecommendationsData (favorites-based recommendations)
-    // - profile.blade.php (recommendation shelves)
-    public static function basedOnFavoriteGenres(int $userId, int $limit = 12)
-    {
-        if (!$userId) return collect();
-
-        // Top genres from favorites (beginner-friendly counting)
-        $topGenreIds = DB::table('movie_genres')
-            ->join('user_favorites', 'movie_genre.movie_id', '=', 'user_favorites.movie_id')
-            ->where('user_favorites.user_id', $userId)
-            ->select('movie_genre.genre_id', DB::raw('COUNT(*) as fav_count'))
-            ->groupBy('movie_genre.genre_id')
-            ->orderByDesc('fav_count')
-            ->limit(5)
-            ->pluck('genre_id');
-
-        if ($topGenreIds->isEmpty()) return collect();
-
-        $excludedIds = self::getExcludedMovieIdsForUser($userId);
-
-        // Simple: same genres, exclude user's favorites and rated
-        $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
-            ->whereHas('genres', function ($q) use ($topGenreIds) {
-                $q->whereIn('genres.id', $topGenreIds);
-            })
-            ->when(!empty($excludedIds), function ($q) use ($excludedIds) {
-                $q->whereNotIn('id', $excludedIds);
-            })
-            ->get()
-            ->map(function ($m) use ($topGenreIds) {
-                $m->match_genres = $m->genres->pluck('id')->intersect($topGenreIds)->count();
-                $m->avg_rating = $m->ratings->count() ? round($m->ratings->avg('rating'), 1) : 0;
-                return $m;
-            })
-            ->sortByDesc(function ($m) {
-                // simple sort: more matched genres first, then higher avg, then newer year
-                return [$m->match_genres, $m->avg_rating ?? 0, $m->release_year ?? 0];
-            })
-            ->take($limit)
-            ->values();
-
-        return MovieHelper::formatMovies($movies);
-    }
-
 
 
 

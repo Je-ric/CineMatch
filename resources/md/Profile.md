@@ -26,7 +26,6 @@ MovieHelper
    ├─ getTopGenresFromFavorites($userId)
    ├─ getTopGenresFromRatings($userId)
    ├─ getGenreShelvesForUser($userId, $source, $topLimit, $perGenre)
-   ├─ basedOnFavoriteGenres($userId, $limit)
    ↓
 Database (movies, genres, ratings_reviews, user_favorites)
 ```
@@ -175,7 +174,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 🔁 Summary Flow
+## Summary Flow
 
 | Step | Function / Helper | Description |
 | ---- | ---------------- | ----------- |
@@ -189,10 +188,107 @@ Database (movies, genres, ratings_reviews, user_favorites)
 
 ---
 
-## 🧠 Logic Behind Recommendations
+## Logic Behind Recommendations
 
 - Favorites and rated movies are handled **separately**; genres are **not merged**.
 - Recommendations are based on **top favorite genres only**.
 - Rated movies are displayed in separate shelves.
 - `formatMovies()` ensures data consistency and prevents errors in Blade components.
 - `getExcludedMovieIdsForUser()` prevents recommending movies already seen or rated.
+
+
+
+Profile Page Tabs (Blade)
+=========================
+
+The **profile page** (profile.blade.php) contains **three main tabs**: Favorites, Rated Movies, and Recommendations. Each tab pulls user-specific data using helper functions in MovieHelper.
+
+Favorites (#favorites)
+--------------------------
+
+**Purpose:** Display the movies the user has favorited along with counts on favorite genres.
+
+**Data Used:**
+
+*   $favorites → list of user’s favorited movies
+*   $favGenres → counts of favorited movies by genre
+
+`[$favorites, $favGenres] = $this->getFavoritesData($user); `
+
+**MovieHelper Functions Called:**
+
+*   getUserFavorites() → fetch all movies favorited by the user
+*   getFavCountsByGenre() → count favorites grouped by genre
+    
+
+**Usage:**
+
+*   Show the list of favorited movies
+*   Display genre-based to understand user preferences
+    
+
+Rated Movies (#rated)
+-------------------------
+
+**Purpose:** Display movies the user has rated along with analytics on rated genres.
+
+**Data Used:**
+
+*   $rated → list of movies the user has rated
+*   $ratedGenres → counts of rated movies by genre
+    
+
+
+`   [$rated, $ratedGenres] = $this->getRatedData($user);   `
+
+**MovieHelper Functions Called:**
+
+*   getUserRatedMovies() → fetch all movies rated by the user
+*   getRatedCountsByGenre() → count ratings grouped by genre
+    
+
+**Usage:**
+
+*   Show the list of rated movies
+*   Provide insights into the genres the user interacts with most
+    
+---
+## Recommendations (#recommendations)
+
+**Purpose:** Display recommendations based on user’s favorites and rated movies. Includes genre-specific shelves like “Because you like these genres” and “Recommended from genres you rated.”
+
+**Data Used:**
+
+*   $genreShelvesFav → movie shelves fetch from favorited genres
+*   $genreShelvesRated → movie shelves fetch from rated genres
+
+`$recommendations = $this->getRecommendationsData($userId);`
+
+**MovieHelper Functions Called:**
+
+*   getGenreShelvesForUser($userId, 'favorites') → generate shelves from favorite genres
+*   getGenreShelvesForUser($userId, 'rated') → generate shelves from rated genres
+*   getTopGenresFromFavorites() → optional analytics on top favorite genres
+*   getTopGenresFromRatings() → optional analytics on top rated genres
+    
+
+**Usage:**
+
+*   Show shelves grouped by user-preferred genres
+*   Provide personalized recommendations based on favorites and ratings
+
+
+**Summary of “when and where used”**
+------------------------------------
+
+*   **Favorites tab:**
+    *   $favorites → getUserFavorites()
+    *   $favGenres → getFavCountsByGenre()
+*   **Rated tab:**
+    *   $rated → getUserRatedMovies()
+    *   $ratedGenres → getRatedCountsByGenre()    
+*   **Recommendations tab:**
+    *   $genreShelvesFav → getGenreShelvesForUser($userId, 'favorites')
+    *   $genreShelvesRated → getGenreShelvesForUser($userId, 'rated')
+*   **Not used anywhere in your current profile page:**
+    *   basedOnFavoriteGenres() → could replace or supplement getGenreShelvesForUser() for a flat list recommendation.
