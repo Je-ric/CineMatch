@@ -81,6 +81,9 @@
                 @else
                     @method('POST')
                 @endif
+
+
+
                 <details class="accordion-section border-b border-slate-600" open>
                     <summary
                         class="bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 cursor-pointer p-6 flex items-center gap-3 text-lg font-semibold text-white transition-all duration-300">
@@ -141,6 +144,9 @@
                     </div>
                 </details>
 
+
+
+
                 {{--  --}}
                 <details class="accordion-section border-b border-slate-600">
                     <summary
@@ -196,6 +202,10 @@
                     </div>
                 </details>
 
+
+
+
+
                 {{--  --}}
                 <details class="accordion-section border-b border-slate-600">
                     <summary
@@ -235,6 +245,10 @@
                         </div>
                     </div>
                 </details>
+
+
+
+
 
                 {{--  --}}
                 <details class="accordion-section">
@@ -278,6 +292,10 @@
                         </div>
                     </div>
                 </details>
+
+
+
+                
 
                 <div class="flex flex-col sm:flex-row gap-4 p-8 bg-slate-700 border-t border-slate-600">
                     <button type="submit" class="btn btn-accent">

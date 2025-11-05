@@ -105,6 +105,8 @@ class Movie extends Model
     // ]
     // The database knows which poster belongs to the movie
     // $movie->poster_url == getPosterUrlAttribute($value), same to the other accessor
+    // get{AttributeName}Attribute Naming Convention -> For poster_url column → PosterUrl → getPosterUrlAttribute.
+
 
     public function getPosterUrlAttribute($value)
     {
