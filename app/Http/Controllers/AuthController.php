@@ -61,7 +61,7 @@ class AuthController extends Controller
     public function redirectGoogle()
     {
         // forces Google to show account chooser every time
-        return Socialite::driver('google')
+        return Socialite::driver('google') 
             ->stateless()
             ->with(['prompt' => 'select_account'])
             ->redirect();

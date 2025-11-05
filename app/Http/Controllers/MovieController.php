@@ -39,6 +39,7 @@ class MovieController extends Controller
         ));
     }
 
+    // viewMovie.php
     public function show($id)
     {
         $movie = MovieHelper::getMovieWithDetails($id);

@@ -53,7 +53,6 @@ class ProfileController extends Controller
         // may retrieval sa RecommendController
         // replaced with MovieHelper
         $ratedModels = MovieHelper::getUserRatedMovies($user->id); // Collection of formatted movies
-
         $rated = MovieHelper::formatMovies($ratedModels);
 
         // same here
