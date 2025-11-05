@@ -26,10 +26,10 @@ class ProfileController extends Controller
         return view('profile', array_merge(
             compact(
                 'user',
-                'favorites',
-                'rated',
-                'favGenres',
-                'ratedGenres',
+                'favorites', // movies in FaveTab
+                'rated', // movies in RatedTab
+                'favGenres', // count
+                'ratedGenres', // count
             ),
             $recommendations
         ));
@@ -37,12 +37,8 @@ class ProfileController extends Controller
 
     private function getFavoritesData($user): array
     {
-        // may retrieval sa RecommendController
-        // replaced with MovieHelper
         $favModels = MovieHelper::getUserFavorites($user->id); // Collection
         $favorites = MovieHelper::formatMovies($favModels);
-
-        // same here
         $favGenres = MovieHelper::getFavCountsByGenre($user->id)->toArray();
 
         return [$favorites, $favGenres];
@@ -50,12 +46,8 @@ class ProfileController extends Controller
 
     private function getRatedData($user): array
     {
-        // may retrieval sa RecommendController
-        // replaced with MovieHelper
         $ratedModels = MovieHelper::getUserRatedMovies($user->id); // Collection of formatted movies
         $rated = MovieHelper::formatMovies($ratedModels);
-
-        // same here
         $ratedGenres = MovieHelper::getRatedCountsByGenre($user->id)->toArray();
 
         return [$rated, $ratedGenres];
@@ -64,12 +56,9 @@ class ProfileController extends Controller
     private function getRecommendationsData($userId): array
     {
         return [
-            'genreShelvesFav' => MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5),
-            'genreShelvesRated' => MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5),
-            'topGenresFav' => MovieHelper::getTopGenresFromFavorites($userId, 5),
-            'topGenresRated' => MovieHelper::getTopGenresFromRatings($userId, 5),
+            'genreShelvesFav' => MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5), 
+            'genreShelvesRated' => MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5), 
         ];
     }
-
 
 }

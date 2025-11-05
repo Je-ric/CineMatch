@@ -43,11 +43,6 @@ Route::post('/movies', [MovieController::class, 'store'])->name('movies.store');
 Route::put('/movies/{id}', [MovieController::class, 'update'])->name('movies.update');
 Route::delete('/movies/{id}', [MovieController::class, 'destroy'])->name('movies.destroy');
 
-Route::post('/people/fetch', [PeopleController::class, 'fetch'])->name('people.fetch');
-Route::post('/people/add',   [PeopleController::class, 'add'])->name('people.add');
-Route::post('/people/remove',[PeopleController::class, 'remove'])->name('people.remove');
-Route::post('/people/search',[PeopleController::class, 'search'])->name('people.search');
-
 Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('auth');
 
 Route::get('/force-logout', function () {

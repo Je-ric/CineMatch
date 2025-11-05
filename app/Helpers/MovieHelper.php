@@ -78,7 +78,7 @@ class MovieHelper
         if (empty($genreIds)) return collect();
 
         $relatedIds = DB::table('movie_genres')
-            ->select('movie_id', DB::raw('COUNT(*) as match_genres')) // for each movie, count how many genres match
+            ->select('movie_id', DB::raw('COUNT(*) as match_genres')) // for each movie, count how many genres match with the current movie
             ->whereIn('genre_id', $genreIds)                          // filter by genre ids
             ->where('movie_id', '!=', $movie->id)            // exclude current movie
             ->groupBy('movie_id')
@@ -165,25 +165,25 @@ class MovieHelper
     //   for each genre, count how many movies in that genre the user has rated/favorited store in cnt
     // ==================================================================================
 
-    // - RecommendController::getFavCountsByGenre
+    // - MovieHelper::getFavCountsByGenre
     // - ProfileController::getFavoritesData (to show counts per genre)
     public static function getFavCountsByGenre(int $userId)
     {
-        return Genre::withCount([
-            'movies as cnt' => fn($q) => $q->whereHas('favoritedBy', fn($f) => $f->where('user_id', $userId))
+        return Genre::withCount([ // get only genres that have movies favorited by user, loop per genre -> count movie
+            'movies as cnt' => fn($q) => $q->whereHas('favoritedBy', fn($f): mixed => $f->where('user_id', $userId))
         ])
             ->having('cnt', '>', 0)
             ->orderByDesc('cnt')
             ->get()
-            ->map(fn($g) => (object) ['id' => $g->id, 'name' => $g->name, 'cnt' => (int) $g->cnt])
+            ->map(fn($g) => (object) ['id' => $g->id, 'name' => $g->name, 'cnt' => (int) $g->cnt]) // loop each genre, use only need
             ->values();
     }
 
-    // - RecommendController::getRatedCountsByGenre
+    // - MovieHelper::getRatedCountsByGenre
     // - ProfileController::getRatedData (to show counts per genre)
     public static function getRatedCountsByGenre(int $userId)
     {
-        return Genre::withCount([
+        return Genre::withCount([ // get only genres that have movies rated by user, loop per genre -> count movie
             'movies as cnt' => fn($q) => $q->whereHas('ratings', fn($r) => $r->where('user_id', $userId))
         ])
             ->having('cnt', '>', 0)
@@ -202,13 +202,12 @@ class MovieHelper
     // think of it, kase if we used the user_favorites table, get each movie, get the genres, count many times each genre then group (madami)
     // but if we use the genre model, so nagloloop tayo for each genre, and find the movie that user has rated/favorited
 
-    //   - RecommendController::getGenreShelvesForUser - builds “shelves” grouped by top genres.
     //   - ProfileController - displays user’s top genres in UI analytics or stats.
     // ==================================================================================
 
     public static function getTopGenresFromRatings(int $userId, int $limit = 5)
     {
-        return Genre::withCount([
+        return Genre::withCount([ // counts how many rated movies exist per genre (loop per genre and count moovies)
             'movies as rated_count' => fn($q) => $q->whereHas('ratings', fn($r) => $r->where('user_id', $userId))
         ])
             ->having('rated_count', '>', 0)
@@ -219,7 +218,7 @@ class MovieHelper
 
     public static function getTopGenresFromFavorites(int $userId, int $limit = 5)
     {
-        return Genre::withCount([
+        return Genre::withCount([ // counts how many favorited movies exist per genre (loop per genre and count moovies)
             'movies as fav_count' => fn($q) => $q->whereHas('favoritedBy', fn($f) => $f->where('user_id', $userId))
         ])
             ->having('fav_count', '>', 0)
@@ -228,7 +227,6 @@ class MovieHelper
             ->get();
     }
 
-    //  - RecommendController::getGenreShelvesForUser
     //  - ProfileController::getRecommendationsData (builds genre shelves for UI)
     //  - profile.blade.php (renders multiple genre shelves)
     public static function getGenreShelvesForUser(int $userId, string $source = 'favorites', int $topLimit = 5, int $perGenre = 5)
@@ -244,7 +242,7 @@ class MovieHelper
 
         if ($topGenres->isEmpty()) return [];
 
-
+        // loop each top genre, group movies per genre (5 movie, 5 genre)
         $shelves = $topGenres->map(function ($genre) use ($userId, $perGenre) {
             $excludedIds = self::getExcludedMovieIdsForUser($userId);
             $movies = Movie::with(['genres', 'country', 'language', 'ratings'])
