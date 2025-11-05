@@ -206,33 +206,32 @@
                     </summary>
                     <div class="p-8 bg-slate-800">
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {{--  --}}
                             <div class="bg-slate-700 border-2 border-slate-600 rounded-xl p-6 space-y-4">
                                 <h5 class="flex items-center gap-3 text-purple-400 font-semibold text-lg">
-                                    <i class="bx bx-user-voice"></i>
-                                    Directors
+                                    <i class="bx bx-user-voice"></i> Directors
                                 </h5>
-                                <div id="directors-list"
-                                    class="min-h-[80px] p-4 bg-slate-800 rounded-lg border-2 border-slate-600">
-                                    <div class="text-slate-400 text-center italic py-4">No directors added yet</div>
-                                </div>
-                                <input type="text" id="director-input"
-                                    class="w-full px-4 py-3 bg-slate-600 border-2 border-slate-500 rounded-lg text-white placeholder-slate-300 focus:border-purple-400 focus:ring-0 focus:outline-none transition-all duration-300"
-                                    placeholder="Type director name and press Enter..." />
+                                @if(isset($movie) && $movie)
+                                    @livewire('movie-people',
+                                                    ['movie' => $movie,
+                                                    'role' => 'Director'],
+                                                    key('director-'.$movie->id))
+                                @endif
                             </div>
 
                             <div class="bg-slate-700 border-2 border-slate-600 rounded-xl p-6 space-y-4">
                                 <h5 class="flex items-center gap-3 text-purple-400 font-semibold text-lg">
-                                    <i class="bx bx-group"></i>
-                                    Casts: (Actors & Actresses)
+                                    <i class="bx bx-group"></i> Casts: (Actors & Actresses)
                                 </h5>
-                                <div id="actors-list"
-                                    class="min-h-[80px] p-4 bg-slate-800 rounded-lg border-2 border-slate-600">
-                                    <div class="text-slate-400 text-center italic py-4">No actors added yet</div>
-                                </div>
-                                <input type="text" id="actor-input"
-                                    class="w-full px-4 py-3 bg-slate-600 border-2 border-slate-500 rounded-lg text-white placeholder-slate-300 focus:border-purple-400 focus:ring-0 focus:outline-none transition-all duration-300"
-                                    placeholder="Type actor name and press Enter..." />
+                                @if(isset($movie) && $movie)
+                                    @livewire('movie-people',
+                                            ['movie' => $movie,
+                                                    'role' => 'Cast'], 
+                                                    key('cast-'.$movie->id))
+                                @endif
                             </div>
+                            {{--  --}}
+
                         </div>
                     </div>
                 </details>
@@ -323,149 +322,5 @@
                     dataList.appendChild(opt);
                 });
             });
-
-        $(document).ready(function() {
-            if (movieId > 0) {
-                loadPeople('Director');
-                loadPeople('Cast');
-            } else {
-                // Disable people inputs during creation (no movie id yet)
-                $('#director-input, #actor-input')
-                    .prop('disabled', true)
-                    .attr('placeholder', 'Save the movie first to add people');
-            }
-            setupAutocomplete();
-        });
-
-        // Load people from server
-        function loadPeople(role) {
-            if (!movieId) return;
-            $.post("{{ route('people.fetch') }}", {
-                    _token: "{{ csrf_token() }}",
-                    movie_id: movieId,
-                    role: role
-                })
-                .done(function(res) {
-                    renderPeople(role, res.data || []);
-                })
-                .fail(function(xhr) {
-                    console.error('Failed to load people', xhr.responseText);
-                });
-        }
-
-        function renderPeople(role, people) {
-            const containerId = role === 'Director' ? '#directors-list' : '#actors-list';
-            // if director role, render in #directors-list and same lang sa #actors-list
-            let html = '';
-
-            if (people.length === 0) {
-                html = '<div class="empty-state">No ' + role.toLowerCase() + 's added yet</div>';
-            } else {
-                people.forEach(function(person) {
-                    html += `<span class="person-badge">
-                    <i class="bx ${role === 'Director' ? 'bx-user-voice' : 'bx-user'}"></i>
-                    ${person.name}
-                    <button type="button" class="remove-person" data-id="${person.id}" data-role="${role}">
-                        <i class="bx bx-x"></i>
-                    </button>
-                </span>`;
-                });
-            }
-
-            $(containerId).html(html);
-        }
-
-        // the downside is that, working lang ang adding ng person if the movie exists, since we need movieID.
-        // let's say movie is the parent, person is the child
-        // we need a parent to have a child, getch?
-        function addPerson(name, role) {
-            const trimmed = name.trim(); // remove extra spaces
-            if (trimmed === '') {
-                console.warn('[People] Add -> empty name, abort.');
-                return;
-            }
-
-            if (!movieId) {
-                alert('Save the movie first, then add people.');
-                return;
-            }
-
-            $.post("{{ route('people.add') }}", {
-                    _token: "{{ csrf_token() }}",
-                    movie_id: movieId,
-                    name: trimmed,
-                    role: role
-                })
-                .done(function() {
-                    const inputId = role === 'Director' ? '#director-input' : '#actor-input';
-                    $(inputId).val('');
-                    loadPeople(role);
-                })
-                .fail(function() {
-                    alert("Error adding " + role.toLowerCase() + "!");
-                });
-        }
-
-        $(document).on('click', '.remove-person', function() {
-            const id = $(this).data('id');
-            const role = $(this).data('role');
-            const personName = $(this).parent().text().trim();
-
-            console.log('[People] Remove -> clicked', {
-                id,
-                role,
-                personName
-            });
-
-            if (confirm(`Are you sure you want to remove this ${role.toLowerCase()}?\nName: ${personName}`)) {
-                if (!movieId) return;
-                $.post("{{ route('people.remove') }}", {
-                        _token: "{{ csrf_token() }}",
-                        movie_id: movieId,
-                        person_id: id,
-                        role: role
-                    })
-                    .done(function() {
-                        loadPeople(role);
-                    })
-                    .fail(function() {
-                        alert("Error removing " + role.toLowerCase() + "!");
-                    });
-            } else {
-                console.log('[People] Remove -> cancelled');
-            }
-        });
-
-        // when enter, determine kung anong input ginamit to get the role then proceed to addPerson
-        $('#director-input, #actor-input').on('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const role = $(this).attr('id') === 'director-input' ? 'Director' : 'Cast';
-                const name = $(this).val();
-                addPerson(name, role);
-            }
-        });
-
-        // more like input search with autocomplete
-        function setupAutocomplete() {
-            $('#director-input, #actor-input').autocomplete({
-                source: function(request, response) {
-                    console.log('[Autocomplete] query:', request.term);
-                    $.post("{{ route('people.search') }}", {
-                            _token: "{{ csrf_token() }}",
-                            query: request.term
-                        })
-                        .done(function(res) {
-                            const people = Array.isArray(res) ? res : (res.data || []);
-                            response(people.map(p => p.name));
-                        })
-                        .fail(function() {
-                            response([]);
-                        });
-                },
-                minLength: 2, // ---
-                delay: 300
-            });
-        }
     </script>
 @endsection
