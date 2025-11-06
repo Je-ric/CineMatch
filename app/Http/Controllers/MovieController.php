@@ -216,7 +216,8 @@ class MovieController extends Controller
         // $movie->languages()->detach();
         $movie->cast()->detach();
         $movie->delete();
-        return response()->json(['success' => true]);
+        // return response()->json(['success' => true]);
+        return redirect()->route('home');
     }
 
     // ====================================================================================
@@ -233,7 +234,7 @@ class MovieController extends Controller
         $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $year = $releaseYear ? (int)$releaseYear : date('Y');
         $filename = sprintf(
-            '%s_%s_%s_%s.%s',
+            '%s_%s_%s.%s',
             $safeTitle,
             $year,
             time(),
