@@ -72,8 +72,6 @@ Database (movies, genres, ratings_reviews, user_favorites)
 **Helper Functions:** 
 - `MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5)`  
 - `MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5)`  
-- `MovieHelper::getTopGenresFromFavorites($userId, 5)`  
-- `MovieHelper::getTopGenresFromRatings($userId, 5)`
 
 - Builds “shelves” for favorites and rated separately.
 - Limits top genres and top movies per genre.
