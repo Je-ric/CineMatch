@@ -83,8 +83,6 @@ Database (movies, genres, ratings_reviews, user_favorites)
 [
   'genreShelvesFav' => [...],
   'genreShelvesRated' => [...],
-  'topGenresFav' => [...],
-  'topGenresRated' => [...],
 ]
 ```
 ---
