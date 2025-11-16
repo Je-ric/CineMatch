@@ -132,7 +132,7 @@ Database (movies, genres, ratings_reviews, user_favorites)
   - User info (`$user`)
   - Favorites (`$favorites`, `$favGenres`, `$favCountries`)
   - Rated (`$rated`, `$ratedGenres`, `$ratedCountries`)
-  - Recommendations (`genreShelvesFav`, `genreShelvesRated`, `topGenresFav`, `topGenresRated`)
+  - Recommendations (`genreShelvesFav`, `genreShelvesRated`,)
 - Passes data to `profile.blade.php` using `array_merge(compact(...), $recommendations)`.
 - Blade uses tabbed UI to display:
   - Favorites
