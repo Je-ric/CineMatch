@@ -23,6 +23,8 @@ class ProfileController extends Controller
         [$rated, $ratedGenres] = $this->getRatedData($user);
         $recommendations = $this->getRecommendationsData($userId);
 
+
+        // merge all data and pass to view
         return view('profile', array_merge(
             compact(
                 'user',
@@ -56,8 +58,8 @@ class ProfileController extends Controller
     private function getRecommendationsData($userId): array
     {
         return [
-            'genreShelvesFav' => MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5), 
-            'genreShelvesRated' => MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5), 
+            'genreShelvesFav' => MovieHelper::getGenreShelvesForUser($userId, 'favorites', 5, 5),
+            'genreShelvesRated' => MovieHelper::getGenreShelvesForUser($userId, 'rated', 5, 5),
         ];
     }
 
