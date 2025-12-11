@@ -160,24 +160,28 @@ class MovieController extends Controller
             'languageName' => 'required|string',
         ]);
 
-        $posterRelative = $movie->poster_url;
+        // Poster
         if ($request->hasFile('poster_file')) {
+            $this->deletePublicFile($movie->getRawOriginal('poster_url'));
             $posterRelative = $this->storeImageToPublic(
                 $request->file('poster_file'),
                 'uploads/posters',
                 $validated['title'],
                 $validated['release_year'] ?? null
             );
+            $movie->poster_url = $posterRelative;
         }
 
-        $bgRelative = $movie->background_url;
+        // Background
         if ($request->hasFile('background_file')) {
+            $this->deletePublicFile($movie->getRawOriginal('background_url'));
             $bgRelative = $this->storeImageToPublic(
                 $request->file('background_file'),
                 'uploads/backgrounds',
                 $validated['title'],
                 $validated['release_year'] ?? null
             );
+            $movie->background_url = $bgRelative;
         }
 
         $countryId = $this->findOrCreateCountryFromJson($validated['countryName']);
@@ -188,12 +192,11 @@ class MovieController extends Controller
             'description' => $validated['description'] ?? null,
             'release_year' => $validated['release_year'] ?? null,
             'trailer_url' => $validated['trailer_url'] ?? null,
-            'poster_url' => $posterRelative ?? $movie->poster_url,
-            'background_url' => $bgRelative ?? $movie->background_url,
             'country_id' => $countryId,
             'language_id' => $languageId,
         ]);
 
+        // Genres
         if (!empty($validated['genres'])) {
             $movie->genres()->sync($validated['genres']);
         } else {
@@ -211,13 +214,15 @@ class MovieController extends Controller
         $movie = Movie::findOrFail($id);
         $this->deletePublicFile($movie->getRawOriginal('poster_url'));
         $this->deletePublicFile($movie->getRawOriginal('background_url'));
+
+        // Detach pivots
         $movie->genres()->detach();
-        // $movie->countries()->detach();
-        // $movie->languages()->detach();
         $movie->cast()->detach();
+
+        // Delete movie
         $movie->delete();
-        // return response()->json(['success' => true]);
-        return redirect()->route('home');
+
+        return redirect()->route('home')->with('success', 'Movie deleted successfully.');
     }
 
     // ====================================================================================
